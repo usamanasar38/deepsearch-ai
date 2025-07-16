@@ -12,7 +12,6 @@ export const env = createEnv({
       .default("development"),
     NEXT_PUBLIC_SERVER_URL: z.url(),
     DATABASE_URL: z.url(),
-    CORS_ORIGIN: z.url(),
     BETTER_AUTH_URL: z.url(),
     BETTER_AUTH_SECRET:
       process.env.NODE_ENV === "production"
@@ -28,7 +27,6 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_SERVER_URL: z.url(),
-    CORS_ORIGIN: z.url(),
   },
 
   /**
@@ -39,7 +37,6 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,
     DATABASE_URL: process.env.DATABASE_URL,
-    CORS_ORIGIN: process.env.CORS_ORIGIN,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     REDIS_URL: process.env.REDIS_URL,
