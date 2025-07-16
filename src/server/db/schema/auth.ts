@@ -1,4 +1,5 @@
 import { boolean, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -49,3 +50,20 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("created_at"),
   updatedAt: timestamp("updated_at"),
 });
+
+
+export declare namespace DB {
+  export type User = InferSelectModel<typeof user>;
+  export type NewUser = InferInsertModel<typeof user>;
+
+  export type Account = InferSelectModel<typeof account>;
+  export type NewAccount = InferInsertModel<typeof account>;
+
+  export type Session = InferSelectModel<typeof session>;
+  export type NewSession = InferInsertModel<typeof session>;
+
+  export type VerificationToken = InferSelectModel<typeof verification>;
+  export type NewVerificationToken = InferInsertModel<
+    typeof verification
+  >;
+}
