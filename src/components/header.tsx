@@ -5,10 +5,6 @@ import { ThemeSwitcher } from "./ui/kibo-ui/theme-switcher";
 import { UserButton } from "./user-button";
 
 export default function Header() {
-  const links = [
-    { to: "/", label: "Home" },
-    { to: "/dashboard", label: "Dashboard" },
-  ];
 
   return (
     <header className="pointer-events-none absolute top-0 z-50 w-full">

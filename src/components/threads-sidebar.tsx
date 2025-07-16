@@ -12,8 +12,19 @@ import {
 } from "@/components/ui/sidebar";
 import { GalleryVerticalEndIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
+import { ThreadItem } from "./ai/thread-item";
+import { Thread } from "./ai/types";
 
 export function ThreadsSidebar() {
+  const threads: Thread[] = [
+    {
+      id: "1",
+      title: "Thread 1",
+      createdAt: Date.now(),
+      authorId: "user1",
+      pinned: false,
+    },
+  ];
   return (
     <Sidebar variant="inset">
       <SidebarHeader>
@@ -37,7 +48,13 @@ export function ThreadsSidebar() {
           </div>
         </Button>
       </SidebarHeader>
-      <SidebarContent className="scrollbar-hide">chats</SidebarContent>
+      <SidebarContent className="scrollbar-hide">
+        <SidebarMenu>
+          {threads.map((thread) => (
+            <ThreadItem key={thread.id} thread={thread} />
+          ))}
+        </SidebarMenu>
+      </SidebarContent>
 
       <SidebarRail />
     </Sidebar>
