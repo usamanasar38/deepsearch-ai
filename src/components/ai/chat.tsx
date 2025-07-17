@@ -12,19 +12,13 @@ import {
   AIMessageAvatar,
   AIMessageContent,
 } from "@/components/ui/kibo-ui/ai/message";
-
-import {
-  AIInput,
-  AIInputSubmit,
-  AIInputTextarea,
-  AIInputToolbar,
-  AIInputTools,
-} from "@/components/ui/kibo-ui/ai/input";
 import { AIResponse } from "../ui/kibo-ui/ai/response";
 import { Loader } from "../ui/loader";
 import { AnimatePresence, motion } from "motion/react";
 import { useSession } from "@/hooks/use-auth";
 import { SignupMessagePrompt } from "../signup-message-prompt";
+import { ChatInput } from "./chat-input";
+import { ChatMessage } from "./chat-message";
 
 const Chat = () => {
   const { data: session, isPending } = useSession();
@@ -61,15 +55,7 @@ const Chat = () => {
       <AIConversation className="relative mx-auto size-full max-w-2xl">
         <AIConversationContent>
           {messages.map(({ content, ...message }) => (
-            <AIMessage
-              from={message.role === "user" ? "user" : "assistant"}
-              key={message.id}
-            >
-              <AIMessageContent>
-                <AIResponse>{content}</AIResponse>
-              </AIMessageContent>
-              <AIMessageAvatar name={message.role} src="" />
-            </AIMessage>
+            <ChatMessage role={message.role} text={content} userName={session?.user && message.role === 'user' ? session.user.name : 'AI'} key={message.id} />
           ))}
           {showTypingLoader && (
             <AIMessage from="assistant">
@@ -109,39 +95,7 @@ const Chat = () => {
               transition={{ duration: 0.2 }}
               className="w-full max-w-4xl px-4"
             >
-              <AIInput className="mx-auto max-w-2xl" onSubmit={handleSubmit}>
-                <AIInputTextarea onChange={handleInputChange} value={input} />
-                <AIInputToolbar>
-                  <AIInputTools>
-                    {/* <AIInputButton>
-                      <PlusIcon size={16} />
-                    </AIInputButton>
-                    <AIInputButton>
-                      <MicIcon size={16} />
-                    </AIInputButton>
-                    <AIInputButton>
-                      <GlobeIcon size={16} />
-                      <span>Search</span>
-                    </AIInputButton>
-                    <AIInputModelSelect onValueChange={setModel} value={model}>
-                      <AIInputModelSelectTrigger>
-                        <AIInputModelSelectValue />
-                      </AIInputModelSelectTrigger>
-                      <AIInputModelSelectContent>
-                        {models.map((model) => (
-                          <AIInputModelSelectItem
-                            key={model.id}
-                            value={model.id}
-                          >
-                            {model.name}
-                          </AIInputModelSelectItem>
-                        ))}
-                      </AIInputModelSelectContent>
-                    </AIInputModelSelect> */}
-                  </AIInputTools>
-                  <AIInputSubmit disabled={!input} status={status} />
-                </AIInputToolbar>
-              </AIInput>
+              <ChatInput value={input} status={status} handleInputChange={handleInputChange} handleSubmit={handleSubmit} />
             </motion.div>
           </motion.div>
         ) : (
@@ -153,40 +107,7 @@ const Chat = () => {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="absolute inset-x-0 -bottom-[3.875rem] z-[10] flex flex-col items-center justify-center gap-2 md:-bottom-10"
           >
-            {/* <StickToBottomButton
-              isAtBottom={isAtBottom}
-              scrollToBottom={scrollToBottom}
-            /> */}
-            <AIInput className="max-w-2xl" onSubmit={handleSubmit}>
-              <AIInputTextarea onChange={handleInputChange} value={input} />
-              <AIInputToolbar>
-                <AIInputTools>
-                  {/* <AIInputButton>
-                    <PlusIcon size={16} />
-                  </AIInputButton>
-                  <AIInputButton>
-                    <MicIcon size={16} />
-                  </AIInputButton>
-                  <AIInputButton>
-                    <GlobeIcon size={16} />
-                    <span>Search</span>
-                  </AIInputButton>
-                  <AIInputModelSelect onValueChange={setModel} value={model}>
-                    <AIInputModelSelectTrigger>
-                      <AIInputModelSelectValue />
-                    </AIInputModelSelectTrigger>
-                    <AIInputModelSelectContent>
-                      {models.map((model) => (
-                        <AIInputModelSelectItem key={model.id} value={model.id}>
-                          {model.name}
-                        </AIInputModelSelectItem>
-                      ))}
-                    </AIInputModelSelectContent>
-                  </AIInputModelSelect> */}
-                </AIInputTools>
-                <AIInputSubmit disabled={!input} status={status} />
-              </AIInputToolbar>
-            </AIInput>
+            <ChatInput value={input} status={status} handleInputChange={handleInputChange} handleSubmit={handleSubmit} />
           </motion.div>
         )}
       </AnimatePresence>
