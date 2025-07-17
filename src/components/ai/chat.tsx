@@ -15,54 +15,14 @@ import {
 
 import {
   AIInput,
-  AIInputButton,
-  AIInputModelSelect,
-  AIInputModelSelectContent,
-  AIInputModelSelectItem,
-  AIInputModelSelectTrigger,
-  AIInputModelSelectValue,
   AIInputSubmit,
   AIInputTextarea,
   AIInputToolbar,
   AIInputTools,
 } from "@/components/ui/kibo-ui/ai/input";
-import { GlobeIcon, MicIcon, PlusIcon } from "lucide-react";
-import { type FormEventHandler, useState } from "react";
 import { AIResponse } from "../ui/kibo-ui/ai/response";
 import { Loader } from "../ui/loader";
 import { AnimatePresence, motion } from "motion/react";
-
-const messages: {
-  from: "user" | "assistant";
-  content: string;
-  avatar: string;
-  name: string;
-}[] = [
-  {
-    from: "user",
-    content: "Hello, how are you?",
-    avatar: "https://github.com/haydenbleasel.png",
-    name: "Hayden Bleasel",
-  },
-  {
-    from: "assistant",
-    content: "I am fine, thank you!",
-    avatar: "https://github.com/openai.png",
-    name: "OpenAI",
-  },
-  {
-    from: "user",
-    content: "What is the weather in Tokyo?",
-    avatar: "https://github.com/haydenbleasel.png",
-    name: "Hayden Bleasel",
-  },
-  {
-    from: "assistant",
-    content: "The weather in Tokyo is sunny.",
-    avatar: "https://github.com/openai.png",
-    name: "OpenAI",
-  },
-];
 
 const Chat = () => {
   const {
@@ -71,7 +31,6 @@ const Chat = () => {
     status,
     handleInputChange,
     handleSubmit,
-    isLoading,
   } = useChat();
 
   const isEmpty = messages.length === 0;
@@ -93,7 +52,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-[90dvh] overflow-y-auto p-4 pt-0">
-      <AIConversation className="relative size-full">
+      <AIConversation className="relative size-full max-w-2xl mx-auto">
         <AIConversationContent>
           {messages.map(({ content, ...message }) => (
             <AIMessage
@@ -103,7 +62,7 @@ const Chat = () => {
               <AIMessageContent>
                 <AIResponse>{content}</AIResponse>
               </AIMessageContent>
-              {/* <AIMessageAvatar name={message.name} src={message.avatar} /> */}
+              <AIMessageAvatar name={message.role} src='' />
             </AIMessage>
           ))}
           {showTypingLoader && (
@@ -144,7 +103,7 @@ const Chat = () => {
               transition={{ duration: 0.2 }}
               className="w-full max-w-4xl px-4"
             >
-              <AIInput className="max-w-2xl" onSubmit={handleSubmit}>
+              <AIInput className="mx-auto max-w-2xl" onSubmit={handleSubmit}>
                 <AIInputTextarea onChange={handleInputChange} value={input} />
                 <AIInputToolbar>
                   <AIInputTools>

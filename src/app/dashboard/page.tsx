@@ -1,11 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useSession } from "@/hooks/use-auth";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending } = useSession();
 
   useEffect(() => {
     if (!session && !isPending) {
