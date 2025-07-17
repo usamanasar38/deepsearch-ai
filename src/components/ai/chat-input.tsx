@@ -34,7 +34,7 @@ export const ChatInput = ({
 }: ChatInputProps) => {
   return (
     <AIInput className="mx-auto max-w-2xl" onSubmit={handleSubmit}>
-      <AIInputTextarea onChange={handleInputChange} value={value} />
+      <AIInputTextarea autoFocus onChange={handleInputChange} value={value} />
       <AIInputToolbar>
         <AIInputTools>
           {/* <AIInputButton>

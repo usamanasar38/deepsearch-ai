@@ -18,7 +18,10 @@ import {
   AIReasoningContent,
   AIReasoningTrigger,
 } from "../ui/kibo-ui/ai/reasoning";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+import { ExternalLinkIcon, GlobeIcon } from "lucide-react";
+import { getFaviconUrl, getOpenGraphImage } from "@/lib/get-url-meta";
 
 type MessagePart = NonNullable<Message["parts"]>[number];
 
@@ -30,81 +33,178 @@ interface ChatMessageProps {
   id: string;
 }
 
-const ToolInvocation = memo(({
-  part,
-}: {
-  part: Extract<MessagePart, { type: "tool-invocation" }>;
-}) => {
-  const { toolInvocation } = part;
-  const { state, toolName, args } = toolInvocation;
-
-  const status = useMemo<AIToolStatus>(() => {
-    switch (state) {
-      case "partial-call":
-      case "call":
-        return "running";
-      case "result":
-        return "completed";
-      default:
-        return "running";
-    }
-  }, [state]);
+const FaviconWithLoader = memo(({ url }: { url: string }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
-    <AITool key={toolName} status={status}>
-      <AIToolHeader name={toolName} status={status} />
-      <AIToolContent>
-        <AIToolParameters parameters={toolInvocation.args} />
-        {state === "result" && (
-          <AIToolResult
-            result={<AIResponse>{toolInvocation.result}</AIResponse>}
-          />
+    <div className="relative flex aspect-square h-4 w-4 items-center justify-center rounded-full">
+      {!imageLoaded && (
+        <div className="bg-muted-foreground/10 absolute inset-0 animate-pulse" />
+      )}
+      <img
+        src={getFaviconUrl(url)}
+        alt=""
+        className={cn(
+          "h-4 w-4 rounded-full object-contain",
+          !imageLoaded && "opacity-0",
         )}
-      </AIToolContent>
-    </AITool>
+        onLoad={() => setImageLoaded(true)}
+        onError={(e) => {
+          setImageLoaded(true);
+          const target = e.target as HTMLImageElement;
+          target.src =
+            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='16'/%3E%3Cline x1='8' y1='12' x2='16' y2='12'/%3E%3C/svg%3E";
+        }}
+      />
+    </div>
   );
 });
 
-export const ChatMessage = memo(({
-  id,
-  role,
-  userName,
-  parts,
-  isStreaming,
-}: ChatMessageProps) => {
-  return (
-    <AIMessage from={role === "user" ? "user" : "assistant"}>
-      <AIMessageContent>
-        {parts.map((part, index) => {
-          if (part.type === "text") {
-            return (
-              <AIResponse key={`${id}-text-${index}`}>{part.text}</AIResponse>
-            );
-          }
-          if (part.type === "reasoning") {
-            const hasReasoningContent =
-              part.reasoning && part.reasoning.trim() !== "";
-            const isReasoningStreaming =
-              isStreaming &&
-              (!hasReasoningContent || part.reasoning.endsWith(""));
-            return (
-              <AIReasoning
-                className="w-full"
-                key={`${id}-reasoning-${index}`}
-                isStreaming={isReasoningStreaming}
-              >
-                <AIReasoningTrigger />
-                <AIReasoningContent>{part.reasoning}</AIReasoningContent>
-              </AIReasoning>
-            );
-          }
-          if (part.type === "tool-invocation") {
-            return <ToolInvocation key={`${id}-tool-${index}`} part={part} />;
-          }
-          return null;
-        })}
-      </AIMessageContent>
-      <AIMessageAvatar name={userName} src="" />
-    </AIMessage>
-  );
-});
+const WebSearchToolInvocation = memo(
+  ({
+    links,
+  }: {
+    links: Array<{ title: string; link: string; snippet: string }>;
+  }) => {
+    return (
+      <AIToolResult
+        result={(<div className="grid grid-cols-1 gap-4">
+          {links.map((item, index) => (
+          <button
+            key={index}
+            type="button"
+            className={cn(
+              "group bg-card relative flex-shrink-0 rounded-lg border text-left",
+              "hover:border-primary/20 transition-all duration-200 hover:shadow-lg",
+              "hover:border-primary/20 hover:bg-accent/50",
+              "w-64 min-w-64 overflow-hidden",
+            )}
+            onClick={() => item.link && window.open(item.link, "_blank")}
+            aria-label={`Open ${item.title} in new tab`}
+          >
+            {item.link && (
+              <div className="bg-muted/30 relative h-32 overflow-hidden">
+                <img
+                  src={getOpenGraphImage(item.link)}
+                  alt=""
+                  className="aspect-video h-full w-full object-cover"
+                  style={{
+                    margin: "0 auto",
+                    maxHeight: "100%",
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const fallback =
+                      target.nextElementSibling as HTMLDivElement;
+                    if (fallback) fallback.style.display = "flex";
+                  }}
+                />
+                <div
+                  className="bg-muted/50 absolute inset-0 hidden items-center justify-center"
+                  style={{ display: "none" }}
+                >
+                  <GlobeIcon className="text-muted-foreground/50 size-8" />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 p-4">
+              <div className="flex items-center gap-2">
+                {item.link && <FaviconWithLoader url={item.link} />}
+
+                <h1 className="leading text-foreground m-0 mb-0 truncate text-base font-semibold">
+                  {item.title}
+                </h1>
+              </div>
+              <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
+                {item.snippet}
+              </p>
+
+              {item.link && (
+                <div className="border-border/50 flex items-center gap-1.5 border-t pt-2">
+                  <span className="text-muted-foreground/70 flex-1 truncate text-xs">
+                    {item.link.replace(/^(https?:\/\/)/, "").split("/")[0]}
+                  </span>
+                  <ExternalLinkIcon className="text-muted-foreground/50 size-3 flex-shrink-0" />
+                </div>
+              )}
+            </div>
+          </button>
+        ))}
+        </div>)}
+      />
+    );
+  },
+);
+
+const ToolInvocation = memo(
+  ({ part }: { part: Extract<MessagePart, { type: "tool-invocation" }> }) => {
+    const { toolInvocation } = part;
+    const { state, toolName, args } = toolInvocation;
+
+    const status = useMemo<AIToolStatus>(() => {
+      switch (state) {
+        case "partial-call":
+        case "call":
+          return "running";
+        case "result":
+          return "completed";
+        default:
+          return "running";
+      }
+    }, [state]);
+
+    return (
+      <AITool key={toolName} status={status}>
+        <AIToolHeader name={toolName} status={status} />
+        <AIToolContent>
+          <AIToolParameters parameters={toolInvocation.args} />
+          {state === "result" && (
+            <WebSearchToolInvocation links={toolInvocation.result} />
+          )}
+        </AIToolContent>
+      </AITool>
+    );
+  },
+);
+
+export const ChatMessage = memo(
+  ({ id, role, userName, parts, isStreaming }: ChatMessageProps) => {
+    return (
+      <AIMessage from={role === "user" ? "user" : "assistant"}>
+        <AIMessageContent className="w-full">
+          {parts.map((part, index) => {
+            if (part.type === "text") {
+              return (
+                <AIResponse key={`${id}-text-${index}`}>{part.text}</AIResponse>
+              );
+            }
+            if (part.type === "reasoning") {
+              const hasReasoningContent =
+                part.reasoning && part.reasoning.trim() !== "";
+              const isReasoningStreaming =
+                isStreaming &&
+                (!hasReasoningContent || part.reasoning.endsWith(""));
+              return (
+                <AIReasoning
+                  className="w-full"
+                  key={`${id}-reasoning-${index}`}
+                  isStreaming={isReasoningStreaming}
+                >
+                  <AIReasoningTrigger />
+                  <AIReasoningContent>{part.reasoning}</AIReasoningContent>
+                </AIReasoning>
+              );
+            }
+            if (part.type === "tool-invocation") {
+              return <ToolInvocation key={`${id}-tool-${index}`} part={part} />;
+            }
+            return null;
+          })}
+        </AIMessageContent>
+        <AIMessageAvatar name={userName} src="" />
+      </AIMessage>
+    );
+  },
+);

@@ -3,6 +3,8 @@ import { streamText, createDataStreamResponse } from "ai";
 import { model } from "@/server/ai/model";
 import z from "zod";
 import { searchSerper } from "@/server/lib/serper";
+import { auth } from "@/server/auth";
+import { headers } from "next/headers";
 
 export const maxDuration = 60;
 
@@ -18,9 +20,22 @@ const systemPrompt = `You are a helpful AI assistant with access to real-time we
 Remember to use the searchWeb tool whenever you need to find current information.`;
 
 export async function POST(request: Request) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 });
+  }
   const body = (await request.json()) as {
     messages: Array<Message>;
+    chatId?: string;
   };
+
+  const { messages, chatId } = body;
+  if (!messages.length) {
+    return new Response("No messages provided", { status: 400 });
+  }
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
@@ -30,6 +45,7 @@ export async function POST(request: Request) {
         model,
         messages,
         system: systemPrompt,
+        maxSteps: 10,
         tools: {
           searchWeb: {
             parameters: z.object({

@@ -10,15 +10,16 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    NEXT_PUBLIC_SERVER_URL: z.url(),
-    DATABASE_URL: z.url(),
-    BETTER_AUTH_URL: z.url(),
+    NEXT_PUBLIC_SERVER_URL: z.string().url(),
+    DATABASE_URL: z.string().url(),
+    BETTER_AUTH_URL: z.string().url(),
     BETTER_AUTH_SECRET:
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
-    REDIS_URL: z.url(),
+    REDIS_URL: z.string().url(),
     OPENROUTER_API_KEY: z.string(),
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
     SERPER_API_KEY: z.string(),
   },
 
@@ -28,7 +29,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    NEXT_PUBLIC_SERVER_URL: z.url(),
+    NEXT_PUBLIC_SERVER_URL: z.string().url(),
   },
 
   /**
@@ -43,6 +44,7 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     REDIS_URL: process.env.REDIS_URL,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     SERPER_API_KEY: process.env.SERPER_API_KEY,
   },
   /**

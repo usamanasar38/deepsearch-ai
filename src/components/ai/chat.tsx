@@ -52,7 +52,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-[90dvh] overflow-y-auto p-4 pt-0">
-      <AIConversation className="relative mx-auto size-full max-w-2xl">
+      <AIConversation className="relative mx-auto size-full max-w-2xl pb-16">
         <AIConversationContent>
           {messages.map((message) => (
             <ChatMessage
