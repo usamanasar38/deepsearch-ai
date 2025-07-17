@@ -23,15 +23,21 @@ import {
 import { AIResponse } from "../ui/kibo-ui/ai/response";
 import { Loader } from "../ui/loader";
 import { AnimatePresence, motion } from "motion/react";
+import { useSession } from "@/hooks/use-auth";
+import { SignupMessagePrompt } from "../signup-message-prompt";
 
 const Chat = () => {
-  const {
-    messages,
-    input,
-    status,
-    handleInputChange,
-    handleSubmit,
-  } = useChat();
+  const { data: session, isPending } = useSession();
+  const { messages, input, status, handleInputChange, handleSubmit } =
+    useChat();
+
+  if (!session?.user && !isPending) {
+    return (
+      <div className="relative flex h-[calc(100dvh-64px)] items-center justify-center">
+        <SignupMessagePrompt />
+      </div>
+    );
+  }
 
   const isEmpty = messages.length === 0;
   const lastMessage = messages[messages.length - 1];
@@ -52,7 +58,7 @@ const Chat = () => {
 
   return (
     <div className="min-h-[90dvh] overflow-y-auto p-4 pt-0">
-      <AIConversation className="relative size-full max-w-2xl mx-auto">
+      <AIConversation className="relative mx-auto size-full max-w-2xl">
         <AIConversationContent>
           {messages.map(({ content, ...message }) => (
             <AIMessage
@@ -62,7 +68,7 @@ const Chat = () => {
               <AIMessageContent>
                 <AIResponse>{content}</AIResponse>
               </AIMessageContent>
-              <AIMessageAvatar name={message.role} src='' />
+              <AIMessageAvatar name={message.role} src="" />
             </AIMessage>
           ))}
           {showTypingLoader && (
