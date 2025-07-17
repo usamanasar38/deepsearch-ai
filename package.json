@@ -20,7 +20,7 @@
     "@daveyplate/better-auth-ui": "^2.0.14",
     "@hookform/resolvers": "^5.1.1",
     "@icons-pack/react-simple-icons": "^13.5.0",
-    "@openrouter/ai-sdk-provider": "1.0.0-beta.1",
+    "@openrouter/ai-sdk-provider": "^0.7.2",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-collapsible": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.14",
