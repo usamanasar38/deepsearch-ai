@@ -8,7 +8,6 @@ import { useTheme } from "next-themes"
 import { ThemeSwitcher, ThemeSwitcherProps } from "@/components/ui/kibo-ui/theme-switcher"
 
 export function AuthView({ pathname }: { pathname: string }) {
-    // const { theme, setTheme } = useTheme();
 
     return (
         <main className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
