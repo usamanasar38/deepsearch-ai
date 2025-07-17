@@ -54,8 +54,19 @@ const Chat = () => {
     <div className="min-h-[90dvh] overflow-y-auto p-4 pt-0">
       <AIConversation className="relative mx-auto size-full max-w-2xl">
         <AIConversationContent>
-          {messages.map(({ content, ...message }) => (
-            <ChatMessage role={message.role} text={content} userName={session?.user && message.role === 'user' ? session.user.name : 'AI'} key={message.id} />
+          {messages.map((message) => (
+            <ChatMessage
+              key={message.id}
+              id={message.id}
+              role={message.role}
+              userName={
+                session?.user && message.role === "user"
+                  ? session.user.name
+                  : "AI"
+              }
+              parts={message.parts}
+              isStreaming={status === "streaming" && message === lastMessage}
+            />
           ))}
           {showTypingLoader && (
             <AIMessage from="assistant">
@@ -95,7 +106,12 @@ const Chat = () => {
               transition={{ duration: 0.2 }}
               className="w-full max-w-4xl px-4"
             >
-              <ChatInput value={input} status={status} handleInputChange={handleInputChange} handleSubmit={handleSubmit} />
+              <ChatInput
+                value={input}
+                status={status}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleSubmit}
+              />
             </motion.div>
           </motion.div>
         ) : (
@@ -107,7 +123,12 @@ const Chat = () => {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="absolute inset-x-0 -bottom-[3.875rem] z-[10] flex flex-col items-center justify-center gap-2 md:-bottom-10"
           >
-            <ChatInput value={input} status={status} handleInputChange={handleInputChange} handleSubmit={handleSubmit} />
+            <ChatInput
+              value={input}
+              status={status}
+              handleInputChange={handleInputChange}
+              handleSubmit={handleSubmit}
+            />
           </motion.div>
         )}
       </AnimatePresence>

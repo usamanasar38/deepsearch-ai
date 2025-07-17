@@ -19,6 +19,7 @@ export const env = createEnv({
         : z.string().optional(),
     REDIS_URL: z.url(),
     OPENROUTER_API_KEY: z.string(),
+    SERPER_API_KEY: z.string(),
   },
 
   /**
@@ -42,6 +43,7 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     REDIS_URL: process.env.REDIS_URL,
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    SERPER_API_KEY: process.env.SERPER_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
