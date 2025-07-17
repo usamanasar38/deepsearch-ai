@@ -1,7 +1,6 @@
 import { Message } from "ai";
 import {
   AIMessage,
-  AIMessageAvatar,
   AIMessageContent,
 } from "@/components/ui/kibo-ui/ai/message";
 import { AIResponse } from "../ui/kibo-ui/ai/response";
@@ -203,7 +202,6 @@ export const ChatMessage = memo(
             return null;
           })}
         </AIMessageContent>
-        <AIMessageAvatar name={userName} src="" />
       </AIMessage>
     );
   },

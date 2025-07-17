@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/kibo-ui/ai/conversation";
 import {
   AIMessage,
-  AIMessageAvatar,
   AIMessageContent,
 } from "@/components/ui/kibo-ui/ai/message";
 import { AIResponse } from "../ui/kibo-ui/ai/response";
@@ -52,8 +51,8 @@ const Chat = () => {
 
   return (
     <div className="min-h-[90dvh] overflow-y-auto p-4 pt-0">
-      <AIConversation className="relative mx-auto size-full max-w-2xl pb-16">
-        <AIConversationContent>
+      <AIConversation className="relative size-full">
+        <AIConversationContent className="max-w-2xl pb-16 mx-auto">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
