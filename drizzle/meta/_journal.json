@@ -8,6 +8,13 @@
       "when": 1752608947784,
       "tag": "0000_useful_iron_monger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1752822988626,
+      "tag": "0001_nebulous_micromacro",
+      "breakpoints": true
     }
   ]
 }
