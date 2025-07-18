@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-
+import { useQuery } from "@tanstack/react-query";
 import {
   AIConversation,
   AIConversationContent,
@@ -17,15 +17,32 @@ import { useSession } from "@/hooks/use-auth";
 import { SignupMessagePrompt } from "../signup-message-prompt";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
+import { getThreadQueryOptions } from "@/hooks/use-threads";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { isNewChatCreated } from "@/utils";
 
 interface ChatProps {
-    threadId: string | undefined
+  threadId: string | undefined;
 }
 
 const Chat = ({ threadId }: ChatProps) => {
+  const router = useRouter();
   const { data: session, isPending } = useSession();
-  const { messages, input, status, handleInputChange, handleSubmit } =
-    useChat();
+  const { data: thread } = useQuery(getThreadQueryOptions(threadId));
+  const { messages, input, status, data, handleInputChange, handleSubmit } = useChat({
+    body: {
+      threadId,
+    },
+    initialMessages: thread?.messages || [],
+  });
+
+  useEffect(() => {
+    const lastDataItem = data?.[data.length - 1];
+    if (lastDataItem && isNewChatCreated(lastDataItem)) {
+      router.push(`/thread/${lastDataItem.chatId}`);
+    }
+  }, [data, router]);
 
   if (!session?.user && !isPending) {
     return (
@@ -55,7 +72,7 @@ const Chat = ({ threadId }: ChatProps) => {
   return (
     <div className="min-h-[90dvh] overflow-y-auto p-4 pt-0">
       <AIConversation className="relative size-full">
-        <AIConversationContent className="max-w-2xl pb-16 mx-auto">
+        <AIConversationContent className="mx-auto max-w-2xl pb-16">
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
