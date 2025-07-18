@@ -1,21 +1,15 @@
 import { relations, sql } from "drizzle-orm";
 import {
-  index,
   integer,
-  pgTableCreator,
-  primaryKey,
-  text,
   timestamp,
   varchar,
   json,
-  boolean,
-  serial,
   pgTable,
 } from "drizzle-orm/pg-core";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 import { user } from "./auth";
 
-export const chats = pgTable("chat", {
+export const threads = pgTable("thread", {
   id: varchar("id", { length: 255 })
     .notNull()
     .primaryKey()
@@ -38,8 +32,8 @@ export const chats = pgTable("chat", {
     .default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const chatsRelations = relations(chats, ({ one, many }) => ({
-  user: one(user, { fields: [chats.userId], references: [user.id] }),
+export const threadsRelations = relations(threads, ({ one, many }) => ({
+  user: one(user, { fields: [threads.userId], references: [user.id] }),
   messages: many(messages),
 }));
 
@@ -48,9 +42,9 @@ export const messages = pgTable("message", {
     .notNull()
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  chatId: varchar("chat_id", { length: 255 })
+  threadId: varchar("thread_id", { length: 255 })
     .notNull()
-    .references(() => chats.id),
+    .references(() => threads.id),
   role: varchar("role", { length: 255 }).notNull(),
   parts: json("parts").notNull(),
   order: integer("order").notNull(),
@@ -63,12 +57,12 @@ export const messages = pgTable("message", {
 });
 
 export const messagesRelations = relations(messages, ({ one }) => ({
-  chat: one(chats, { fields: [messages.chatId], references: [chats.id] }),
+  thread: one(threads, { fields: [messages.threadId], references: [threads.id] }),
 }));
 
 export declare namespace DB {
-  export type Chat = InferSelectModel<typeof chats>;
-  export type NewChat = InferInsertModel<typeof chats>;
+  export type Thread = InferSelectModel<typeof threads>;
+  export type NewThread = InferInsertModel<typeof threads>;
 
   export type Message = InferSelectModel<typeof messages>;
   export type NewMessage = InferInsertModel<typeof messages>;

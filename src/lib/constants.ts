@@ -1,0 +1,1 @@
+export const NEW_THREAD_CREATED = "NEW_THREAD_CREATED";

@@ -1,14 +1,10 @@
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarRail,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { GalleryVerticalEndIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
@@ -39,7 +35,7 @@ export function ThreadsSidebar() {
 
         <Button variant="outline">
           <SearchIcon className="h-4 w-4" />
-          Search chats
+          Search Threads
           <div className="ml-auto flex items-center gap-1 text-xs">
             <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono font-medium select-none">
               <span className="text-sm">⌘</span>

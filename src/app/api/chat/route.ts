@@ -9,10 +9,11 @@ import z from "zod";
 import { searchSerper } from "@/server/lib/serper";
 import { auth } from "@/server/auth";
 import { headers } from "next/headers";
-import { upsertChat } from "@/server/db/queries";
+import { upsertThread } from "@/server/db/queries";
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
-import { chats } from "@/server/db/schema/chat";
+import { threads } from "@/server/db/schema/threads";
+import { NEW_THREAD_CREATED } from "@/lib/constants";
 
 export const maxDuration = 60;
 
@@ -37,38 +38,44 @@ export async function POST(request: Request) {
   }
   const body = (await request.json()) as {
     messages: Array<Message>;
-    chatId?: string;
+    threadId?: string;
   };
 
-  const { messages, chatId } = body;
+  const { messages, threadId: threadId } = body;
   if (!messages.length) {
     return new Response("No messages provided", { status: 400 });
   }
 
-  // If no chatId is provided, create a new chat with the user's message
-  let currentChatId = chatId;
-  if (!currentChatId) {
-    const newChatId = crypto.randomUUID();
-    await upsertChat({
+  // If no threadId is provided, create a new thread with the user's message
+  let currentThreadId = threadId;
+  if (!currentThreadId) {
+    const newThreadId = crypto.randomUUID();
+    await upsertThread({
       userId: session.user.id,
-      chatId: newChatId,
+      threadId: newThreadId,
       title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
       messages: messages, // Only save the user's message initially
     });
-    currentChatId = newChatId;
+    currentThreadId = newThreadId;
   } else {
-    // Verify the chat belongs to the user
-    const chat = await db.query.chats.findFirst({
-      where: eq(chats.id, currentChatId),
+    // Verify the thread belongs to the user
+    const thread = await db.query.threads.findFirst({
+      where: eq(threads.id, currentThreadId),
     });
-    if (!chat || chat.userId !== session.user.id) {
-      return new Response("Chat not found or unauthorized", { status: 404 });
+    if (!thread || thread.userId !== session.user.id) {
+      return new Response("Thread not found or unauthorized", { status: 404 });
     }
   }
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
-      const { messages } = body;
+      // If this is a new thread, send the thread ID to the frontend
+      if (!threadId) {
+        dataStream.writeData({
+          type: NEW_THREAD_CREATED,
+          threadId: currentThreadId,
+        });
+      }
 
       const result = streamText({
         model,
@@ -106,10 +113,10 @@ export async function POST(request: Request) {
             return;
           }
 
-          // Save the complete chat history
-          await upsertChat({
+          // Save the complete thread history
+          await upsertThread({
             userId: session.user.id,
-            chatId: currentChatId,
+            threadId: currentThreadId,
             title: lastMessage.content.slice(0, 50) + "...",
             messages: updatedMessages,
           });

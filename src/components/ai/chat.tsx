@@ -11,7 +11,6 @@ import {
   AIMessage,
   AIMessageContent,
 } from "@/components/ui/kibo-ui/ai/message";
-import { AIResponse } from "../ui/kibo-ui/ai/response";
 import { Loader } from "../ui/loader";
 import { AnimatePresence, motion } from "motion/react";
 import { useSession } from "@/hooks/use-auth";
@@ -19,7 +18,11 @@ import { SignupMessagePrompt } from "../signup-message-prompt";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 
-const Chat = () => {
+interface ChatProps {
+    threadId: string | undefined
+}
+
+const Chat = ({ threadId }: ChatProps) => {
   const { data: session, isPending } = useSession();
   const { messages, input, status, handleInputChange, handleSubmit } =
     useChat();
@@ -32,7 +35,7 @@ const Chat = () => {
     );
   }
 
-  const isEmpty = messages.length === 0;
+  const isEmpty = messages.length === 0 && !threadId;
   const lastMessage = messages[messages.length - 1];
 
   const isStreamingWithoutContent =

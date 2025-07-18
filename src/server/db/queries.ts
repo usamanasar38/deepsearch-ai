@@ -1,32 +1,32 @@
 import { db } from ".";
-import { chats, messages } from "./schema/chat";
+import { threads, messages } from "./schema/threads";
 import type { Message } from "ai";
 import { eq, and } from "drizzle-orm";
 
-export const upsertChat = async (opts: {
+export const upsertThread = async (opts: {
   userId: string;
-  chatId: string;
+  threadId: string;
   title: string;
   messages: Message[];
 }) => {
-  const { userId, chatId, title, messages: newMessages } = opts;
+  const { userId, threadId: threadId, title, messages: newMessages } = opts;
 
-  // First, check if the chat exists and belongs to the user
-  const existingChat = await db.query.chats.findFirst({
-    where: eq(chats.id, chatId),
+  // First, check if the thread exists and belongs to the user
+  const existingThread = await db.query.threads.findFirst({
+    where: eq(threads.id, threadId),
   });
 
-  if (existingChat) {
-    // If chat exists but belongs to a different user, throw error
-    if (existingChat.userId !== userId) {
-      throw new Error("Chat ID already exists under a different user");
+  if (existingThread) {
+    // If thread exists but belongs to a different user, throw error
+    if (existingThread.userId !== userId) {
+      throw new Error("Thread ID already exists under a different user");
     }
     // Delete all existing messages
-    await db.delete(messages).where(eq(messages.chatId, chatId));
+    await db.delete(messages).where(eq(messages.threadId, threadId));
   } else {
-    // Create new chat
-    await db.insert(chats).values({
-      id: chatId,
+    // Create new thread
+    await db.insert(threads).values({
+      id: threadId,
       userId,
       title,
     });
@@ -36,21 +36,21 @@ export const upsertChat = async (opts: {
   await db.insert(messages).values(
     newMessages.map((message, index) => ({
       id: crypto.randomUUID(),
-      chatId,
+      threadId: threadId,
       role: message.role,
       parts: message.parts,
       order: index,
     })),
   );
 
-  return { id: chatId };
+  return { id: threadId };
 };
 
-export const getChat = async (opts: { userId: string; chatId: string }) => {
-  const { userId, chatId } = opts;
+export const getThread = async (opts: { userId: string; threadId: string }) => {
+  const { userId, threadId } = opts;
 
-  const chat = await db.query.chats.findFirst({
-    where: and(eq(chats.id, chatId), eq(chats.userId, userId)),
+  const thread = await db.query.threads.findFirst({
+    where: and(eq(threads.id, threadId), eq(threads.userId, userId)),
     with: {
       messages: {
         orderBy: (messages, { asc }) => [asc(messages.order)],
@@ -58,13 +58,13 @@ export const getChat = async (opts: { userId: string; chatId: string }) => {
     },
   });
 
-  if (!chat) {
+  if (!thread) {
     return null;
   }
 
   return {
-    ...chat,
-    messages: chat.messages.map((message) => ({
+    ...thread,
+    messages: thread.messages.map((message) => ({
       id: message.id,
       role: message.role,
       content: message.parts,
@@ -72,11 +72,11 @@ export const getChat = async (opts: { userId: string; chatId: string }) => {
   };
 };
 
-export const getChats = async (opts: { userId: string }) => {
+export const getThreads = async (opts: { userId: string }) => {
   const { userId } = opts;
 
-  return await db.query.chats.findMany({
-    where: eq(chats.userId, userId),
-    orderBy: (chats, { desc }) => [desc(chats.updatedAt)],
+  return await db.query.threads.findMany({
+    where: eq(threads.userId, userId),
+    orderBy: (threads, { desc }) => [desc(threads.updatedAt)],
   });
 };
