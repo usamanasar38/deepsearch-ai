@@ -8,28 +8,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import { Edit3Icon, FolderOpenIcon, MoreHorizontalIcon, PinIcon, Trash2Icon } from "lucide-react"
+import { Edit3Icon, MoreHorizontalIcon, PinIcon, Trash2Icon } from "lucide-react"
 import { memo, useState } from "react"
 import equal from "fast-deep-equal/es6"
-import type { Thread } from "./types"
 import Link from "next/link"
+import { DB } from "@/server/db/schema/threads";
 
 interface ThreadItemProps {
-    thread: Thread
+    thread: DB.Thread,
+    threadId: string | undefined,
 }
 
 export const ThreadItem = memo(
     ({
         thread,
+        threadId,
     }: ThreadItemProps) => {
-        const [isMenuOpen, setIsMenuOpen] = useState(false)
-        // const isActive = params.threadId === thread._id
+        const [isMenuOpen, setIsMenuOpen] = useState(false);
+        const isActive = threadId === thread.id;
 
-
-        const handleTogglePin = async () => {
-            const pinned = thread.pinned
-            console.log("Toggle pin for thread:", thread.id, "Current state:", pinned)
-        }
 
         const handleRename = () => {
             console.log("Rename thread:", thread)
@@ -49,19 +46,18 @@ export const ThreadItem = memo(
                     className={cn(
                         "group/item flex w-full items-center rounded-sm hover:bg-accent/50",
                         isMenuOpen && "bg-accent/50",
-                        // isActive && "bg-accent/60"
+                        isActive && "bg-accent/60"
                     )}
                 >
                     <SidebarMenuButton
                         asChild
                         className={cn(
                             "flex-1 hover:bg-transparent",
-                            // isActive && "text-foreground"
+                            isActive && "text-foreground"
                         )}
                     >
                         <Link
-                            // href={`/threads/${thread.id}`}
-                            href="#"
+                            href={`/?id=${thread.id}`}
                             className="flex items-center justify-between"
                         >
                             <span className="truncate">{thread.title}</span>
@@ -83,14 +79,10 @@ export const ThreadItem = memo(
                                         <Edit3Icon className="h-4 w-4" />
                                         Rename
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleTogglePin}>
+                                    {/* <DropdownMenuItem onClick={handleTogglePin}>
                                         <PinIcon className="h-4 w-4" />
                                         {thread.pinned ? "Unpin" : "Pin"}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleMove}>
-                                        <FolderOpenIcon className="h-4 w-4" />
-                                        Move to folder
-                                    </DropdownMenuItem>
+                                    </DropdownMenuItem> */}
                                     <DropdownMenuItem onClick={handleDelete} variant="destructive">
                                         <Trash2Icon className="h-4 w-4" />
                                         Delete

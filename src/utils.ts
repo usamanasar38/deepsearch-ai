@@ -2,7 +2,7 @@ import { NEW_THREAD_CREATED } from "./lib/constants";
 
 export function isNewChatCreated(data: unknown): data is {
   type: typeof NEW_THREAD_CREATED;
-  chatId: string;
+  threadId: string;
 } {
   return (
     typeof data === "object" &&

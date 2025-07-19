@@ -28,6 +28,12 @@ const systemPrompt = `You are a helpful AI assistant with access to real-time we
 
 Remember to use the searchWeb tool whenever you need to find current information.`;
 
+const ChatSchema = z.object({
+  threadId: z.string(),
+  isNewThread: z.boolean(),
+  messages: z.array(z.unknown()).min(1),
+});
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -36,31 +42,34 @@ export async function POST(request: Request) {
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
   }
-  const body = (await request.json()) as {
-    messages: Array<Message>;
-    threadId?: string;
+
+  const schemaParseResult = ChatSchema.safeParse(await request.json());
+  if (!schemaParseResult.success) {
+    return new Response("Validation failed: " + schemaParseResult.error.message, { status: 400 });
+  }
+
+  const { messages, threadId, isNewThread } = schemaParseResult.data as {
+    threadId: string;
+    isNewThread: boolean;
+    messages: Message[]
   };
 
-  const { messages, threadId: threadId } = body;
   if (!messages.length) {
     return new Response("No messages provided", { status: 400 });
   }
 
   // If no threadId is provided, create a new thread with the user's message
-  let currentThreadId = threadId;
-  if (!currentThreadId) {
-    const newThreadId = crypto.randomUUID();
+  if (isNewThread) {
     await upsertThread({
       userId: session.user.id,
-      threadId: newThreadId,
+      threadId,
       title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
       messages: messages, // Only save the user's message initially
     });
-    currentThreadId = newThreadId;
   } else {
     // Verify the thread belongs to the user
     const thread = await db.query.threads.findFirst({
-      where: eq(threads.id, currentThreadId),
+      where: eq(threads.id, threadId),
     });
     if (!thread || thread.userId !== session.user.id) {
       return new Response("Thread not found or unauthorized", { status: 404 });
@@ -73,7 +82,7 @@ export async function POST(request: Request) {
       if (!threadId) {
         dataStream.writeData({
           type: NEW_THREAD_CREATED,
-          threadId: currentThreadId,
+          threadId,
         });
       }
 
@@ -116,7 +125,7 @@ export async function POST(request: Request) {
           // Save the complete thread history
           await upsertThread({
             userId: session.user.id,
-            threadId: currentThreadId,
+            threadId: threadId,
             title: lastMessage.content.slice(0, 50) + "...",
             messages: updatedMessages,
           });

@@ -17,30 +17,35 @@ import { useSession } from "@/hooks/use-auth";
 import { SignupMessagePrompt } from "../signup-message-prompt";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
-import { getThreadQueryOptions } from "@/hooks/use-threads";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { isNewChatCreated } from "@/utils";
+import { UIMessage } from "ai";
+import { api } from "@/trpc/react";
 
 interface ChatProps {
+  isNewThread: boolean;
   threadId: string | undefined;
+  initialMessages: UIMessage[];
 }
 
-const Chat = ({ threadId }: ChatProps) => {
+const Chat = ({ threadId, initialMessages, isNewThread }: ChatProps) => {
   const router = useRouter();
+  const utils = api.useUtils();
   const { data: session, isPending } = useSession();
-  const { data: thread } = useQuery(getThreadQueryOptions(threadId));
   const { messages, input, status, data, handleInputChange, handleSubmit } = useChat({
     body: {
       threadId,
+      isNewThread
     },
-    initialMessages: thread?.messages || [],
+    initialMessages,
   });
 
   useEffect(() => {
     const lastDataItem = data?.[data.length - 1];
     if (lastDataItem && isNewChatCreated(lastDataItem)) {
-      router.push(`/thread/${lastDataItem.chatId}`);
+      utils.threads.getThreads.invalidate();
+      router.push(`/?id=${lastDataItem.threadId}`);
     }
   }, [data, router]);
 
