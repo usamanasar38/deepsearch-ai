@@ -159,7 +159,7 @@ const ToolInvocation = memo(
         <AIToolHeader name={toolName} status={status} />
         <AIToolContent>
           <AIToolParameters parameters={toolInvocation.args} />
-          {state === "result" && (
+          {state === "result" && toolName === 'searchWeb' && (
             <WebSearchToolInvocation links={toolInvocation.result} />
           )}
         </AIToolContent>
