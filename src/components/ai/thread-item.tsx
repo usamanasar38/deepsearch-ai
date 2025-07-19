@@ -97,7 +97,8 @@ export const ThreadItem = memo(
     },
     (prevProps, nextProps) => {
         return (
-            equal(prevProps.thread, nextProps.thread)
+            equal(prevProps.thread, nextProps.thread) &&
+            prevProps.threadId === nextProps.threadId
         )
     }
 )
