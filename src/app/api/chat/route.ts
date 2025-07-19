@@ -68,6 +68,10 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const trace = langfuse.trace({
+    name: "chat",
+    userId: session.user.id,
+  });
 
   const { messages, threadId, isNewThread } = schemaParseResult.data as {
     threadId: string;
@@ -77,26 +81,51 @@ export async function POST(request: Request) {
 
   // If no threadId is provided, create a new thread with the user's message
   if (isNewThread) {
+    const createChatSpan = trace.span({
+      name: "create-new-thread",
+      input: {
+        userId: session.user.id,
+        title: messages[messages.length - 1]!.content.slice(0, 50),
+        messages,
+      },
+    });
     await upsertThread({
       userId: session.user.id,
       threadId,
       title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
       messages: messages, // Only save the user's message initially
     });
+    createChatSpan.end({
+      output: {
+        threadId,
+      },
+    });
   } else {
     // Verify the thread belongs to the user
+    const verifyChatSpan = trace.span({
+      name: "verify-chat-ownership",
+      input: {
+        threadId,
+        userId: session.user.id,
+      },
+    });
+
     const thread = await db.query.threads.findFirst({
       where: eq(threads.id, threadId),
+    });
+    verifyChatSpan.end({
+      output: {
+        exists: !!thread,
+        belongsToUser: thread?.userId === session.user.id,
+      },
     });
     if (!thread || thread.userId !== session.user.id) {
       return new Response("Thread not found or unauthorized", { status: 404 });
     }
   }
 
-  const trace = langfuse.trace({
+  trace.update({
     sessionId: threadId,
-    name: "thread",
-    userId: session.user.id,
   });
 
   return createDataStreamResponse({
@@ -180,12 +209,27 @@ export async function POST(request: Request) {
             return;
           }
 
+          const saveChatSpan = trace.span({
+            name: "save-chat-history",
+            input: {
+              userId: session.user.id,
+              threadId,
+              title: lastMessage.content.slice(0, 50),
+              messageCount: updatedMessages.length,
+            },
+          });
+
           // Save the complete thread history
           await upsertThread({
             userId: session.user.id,
             threadId: threadId,
             title: lastMessage.content.slice(0, 50) + "...",
             messages: updatedMessages,
+          });
+          saveChatSpan.end({
+            output: {
+              success: true,
+            },
           });
           await langfuse.flushAsync();
         },
