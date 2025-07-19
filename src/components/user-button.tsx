@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useSession } from "@/hooks/use-auth"
 import { authClient } from "@/lib/auth-client"
-import { getQueryClient } from "@/lib/get-query-client";
 import { GitHubIcon } from "@daveyplate/better-auth-ui"
+import { useQueryClient } from "@tanstack/react-query"
 import {
     Loader2,
     LogOutIcon,
@@ -25,7 +25,7 @@ import { useRouter } from "next/navigation"
 
 export function UserButton() {
     const { data: session, isPending } = useSession();
-    const queryClient = getQueryClient();
+    const queryClient = useQueryClient();
     const router = useRouter();
 
     if (isPending) {

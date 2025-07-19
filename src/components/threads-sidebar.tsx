@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -9,18 +11,11 @@ import {
 import { GalleryVerticalEndIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 import { ThreadItem } from "./ai/thread-item";
-import { Thread } from "./ai/types";
+import { api } from "@/trpc/react";
 
-export function ThreadsSidebar() {
-  const threads: Thread[] = [
-    {
-      id: "1",
-      title: "Thread 1",
-      createdAt: Date.now(),
-      authorId: "user1",
-      pinned: false,
-    },
-  ];
+export function ThreadsSidebar({ threadId }: { threadId: string | undefined }) {
+  const { data: threads } = api.threads.getThreads.useQuery();
+
   return (
     <Sidebar variant="inset">
       <SidebarHeader>
@@ -31,7 +26,9 @@ export function ThreadsSidebar() {
         </div>
         <div className="bg-border my-2 h-px w-full" />
 
-        <Button>New Chat</Button>
+        <Button asChild>
+          <Link href="/">New Chat</Link>
+        </Button>
 
         <Button variant="outline">
           <SearchIcon className="h-4 w-4" />
@@ -46,8 +43,8 @@ export function ThreadsSidebar() {
       </SidebarHeader>
       <SidebarContent className="scrollbar-hide">
         <SidebarMenu>
-          {threads.map((thread) => (
-            <ThreadItem key={thread.id} thread={thread} />
+          {threads?.map((thread) => (
+            <ThreadItem key={thread.id} threadId={threadId} thread={thread} />
           ))}
         </SidebarMenu>
       </SidebarContent>
