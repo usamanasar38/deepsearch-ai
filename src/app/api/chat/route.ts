@@ -4,6 +4,7 @@ import {
   createDataStreamResponse,
   appendResponseMessages,
 } from "ai";
+import { Langfuse } from "langfuse";
 import { model } from "@/server/ai/model";
 import z from "zod";
 import { searchSerper } from "@/server/lib/serper";
@@ -15,7 +16,11 @@ import { eq } from "drizzle-orm";
 import { threads } from "@/server/db/schema/threads";
 import { NEW_THREAD_CREATED } from "@/lib/constants";
 
-export const maxDuration = 60;
+import { env } from "@/env";
+
+const langfuse = new Langfuse({
+  environment: env.NODE_ENV,
+});
 
 const systemPrompt = `You are a helpful AI assistant with access to real-time web search capabilities. When answering questions:
 
@@ -45,18 +50,17 @@ export async function POST(request: Request) {
 
   const schemaParseResult = ChatSchema.safeParse(await request.json());
   if (!schemaParseResult.success) {
-    return new Response("Validation failed: " + schemaParseResult.error.message, { status: 400 });
+    return new Response(
+      "Validation failed: " + schemaParseResult.error.message,
+      { status: 400 },
+    );
   }
 
   const { messages, threadId, isNewThread } = schemaParseResult.data as {
     threadId: string;
     isNewThread: boolean;
-    messages: Message[]
+    messages: Message[];
   };
-
-  if (!messages.length) {
-    return new Response("No messages provided", { status: 400 });
-  }
 
   // If no threadId is provided, create a new thread with the user's message
   if (isNewThread) {
@@ -76,10 +80,16 @@ export async function POST(request: Request) {
     }
   }
 
+  const trace = langfuse.trace({
+    sessionId: threadId,
+    name: "thread",
+    userId: session.user.id,
+  });
+
   return createDataStreamResponse({
     execute: async (dataStream) => {
       // If this is a new thread, send the thread ID to the frontend
-      if (!threadId) {
+      if (isNewThread) {
         dataStream.writeData({
           type: NEW_THREAD_CREATED,
           threadId,
@@ -91,7 +101,13 @@ export async function POST(request: Request) {
         messages,
         system: systemPrompt,
         maxSteps: 10,
-        experimental_telemetry: { isEnabled: true },
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: `chat`,
+          metadata: {
+            langfuseTraceId: trace.id,
+          },
+        },
         tools: {
           searchWeb: {
             parameters: z.object({
@@ -130,6 +146,7 @@ export async function POST(request: Request) {
             title: lastMessage.content.slice(0, 50) + "...",
             messages: updatedMessages,
           });
+          await langfuse.flushAsync();
         },
       });
 
