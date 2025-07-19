@@ -18,9 +18,12 @@ export const env = createEnv({
         ? z.string()
         : z.string().optional(),
     REDIS_URL: z.string().url(),
-    OPENROUTER_API_KEY: z.string(),
+    // OPENROUTER_API_KEY: z.string(),
     GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
     SERPER_API_KEY: z.string(),
+    LANGFUSE_SECRET_KEY: z.string(),
+    LANGFUSE_PUBLIC_KEY: z.string(),
+    LANGFUSE_BASEURL: z.string().url(),
   },
 
   /**
@@ -43,9 +46,12 @@ export const env = createEnv({
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     REDIS_URL: process.env.REDIS_URL,
-    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    // OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
     GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     SERPER_API_KEY: process.env.SERPER_API_KEY,
+    LANGFUSE_SECRET_KEY: process.env.LANGFUSE_SECRET_KEY,
+    LANGFUSE_PUBLIC_KEY: process.env.LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_BASEURL: process.env.LANGFUSE_BASEURL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -91,6 +91,7 @@ export async function POST(request: Request) {
         messages,
         system: systemPrompt,
         maxSteps: 10,
+        experimental_telemetry: { isEnabled: true },
         tools: {
           searchWeb: {
             parameters: z.object({
