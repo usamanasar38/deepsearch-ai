@@ -94,6 +94,7 @@
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
     "autoevals": "^0.0.130",
+    "dotenv": "^17.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
     "eslint-plugin-drizzle": "^0.2.3",
@@ -107,5 +108,15 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },
-  "packageManager": "pnpm@10.6.2+sha512.47870716bea1572b53df34ad8647b42962bc790ce2bf4562ba0f643237d7302a3d6a8ecef9e4bdfc01d23af1969aa90485d4cebb0b9638fa5ef1daef656f6c1b"
+  "packageManager": "pnpm@10.6.2+sha512.47870716bea1572b53df34ad8647b42962bc790ce2bf4562ba0f643237d7302a3d6a8ecef9e4bdfc01d23af1969aa90485d4cebb0b9638fa5ef1daef656f6c1b",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tailwindcss/oxide",
+      "better-sqlite3",
+      "core-js",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
 }
