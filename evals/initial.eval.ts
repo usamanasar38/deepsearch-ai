@@ -1,12 +1,13 @@
 import type { Message } from "ai";
 import { evalite } from "evalite";
 import { askDeepSearch } from "@/server/ai/deep-search";
-import { Factuality } from "@/factuality-scorer";
+import { Factuality } from "@/factuality.scorer";
 import { devData } from "./data-sets/dev";
 import { env } from "@/env";
 import { ciData } from "./data-sets/ci";
 import { regressionData } from "./data-sets/regression";
 import { EvalData } from "./data-sets/type";
+import { AnswerRelevancy } from "@/answer-relevancy.scorer";
 
 evalite("Deep Search Eval", {
   data: async (): Promise<EvalData[]> => {
@@ -45,5 +46,6 @@ evalite("Deep Search Eval", {
       },
     },
     Factuality,
+    AnswerRelevancy,
   ],
 });
