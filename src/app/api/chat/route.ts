@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 import { threads } from "@/server/db/schema/threads";
 import { NEW_THREAD_CREATED } from "@/lib/constants";
 import { streamFromDeepSearch } from "@/server/ai/deep-search";
+import { checkRateLimit, recordRateLimit } from "@/server/lib/rate-limit";
 
 const langfuse = new Langfuse({
   environment: env.NODE_ENV,
@@ -22,12 +23,21 @@ const ChatSchema = z.object({
   messages: z.array(z.unknown()).min(1),
 });
 
+
+// Rate limit configuration
+const rateLimitConfig = {
+	maxRequests: 20,
+	maxRetries: 3,
+	windowMs: 60_000, // 20 seconds
+	keyPrefix: "chat",
+};
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  if (!session) {
+  if (!session?.user.id) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -38,6 +48,22 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  // Check rate limit before processing the request
+  const rateLimitCheck = await checkRateLimit(rateLimitConfig);
+  if (!rateLimitCheck.allowed) {
+    console.log("Rate limit exceeded, waiting...");
+    const isAllowed = await rateLimitCheck.retry();
+
+    if (!isAllowed) {
+      return new Response("Rate limit exceeded", {
+        status: 429,
+      });
+    }
+  }
+
+  // Record the request after successful rate limit check
+  await recordRateLimit(rateLimitConfig);
+
   const trace = langfuse.trace({
     name: "chat",
     userId: session.user.id,
