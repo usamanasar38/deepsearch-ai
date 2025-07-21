@@ -1,6 +1,7 @@
 import type { Message } from "ai";
 import { evalite } from "evalite";
 import { askDeepSearch } from "@/server/ai/deep-search";
+import { Factuality } from "@/factuality-scorer";
 
 evalite("Deep Search Eval", {
   data: async (): Promise<{ input: string; expected: string }[]> => {
@@ -52,5 +53,6 @@ Development and Build Performance: Improved build times and Faster Fast Refresh.
         return containsLinks ? 1 : 0;
       },
     },
+	Factuality,
   ],
 });
