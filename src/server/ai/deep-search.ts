@@ -3,6 +3,7 @@ import { model } from "./model";
 import { searchSerper } from "../lib/serper";
 import { bulkCrawlWebsites } from "../scraper";
 import { z } from "zod";
+import { env } from "@/env";
 
 const systemPrompt = `You are a helpful AI assistant with access to real-time web search capabilities. The current date and time is ${new Date().toLocaleString()}. When answering questions:
 
@@ -16,7 +17,7 @@ const systemPrompt = `You are a helpful AI assistant with access to real-time we
 8. IMPORTANT: After finding relevant URLs from search results, ALWAYS use the scrapePages tool to get the full content of those pages. Never rely solely on search snippets.
 
 Your workflow should be:
-1. Use searchWeb to find 10 relevant URLs from diverse sources (news sites, blogs, official documentation, etc.)
+1. Use searchWeb to find ${env.SEARCH_RESULTS_COUNT} relevant URLs from diverse sources (news sites, blogs, official documentation, etc.)
 2. Select 4-6 of the most relevant and diverse URLs to scrape
 3. Use scrapePages to get the full content of those URLs
 4. Use the full content to provide detailed, accurate answers
@@ -44,7 +45,7 @@ export const streamFromDeepSearch = (opts: {
         }),
         execute: async ({ query }, { abortSignal }) => {
           const results = await searchSerper(
-            { q: query, num: 10 },
+            { q: query, num: env.SEARCH_RESULTS_COUNT },
             abortSignal,
           );
 
