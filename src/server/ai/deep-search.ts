@@ -101,5 +101,5 @@ export async function askDeepSearch(messages: Message[]) {
   // the stream will never finish
   await result.consumeStream();
 
-  return await result.text;
+  return result.text;
 }
