@@ -6,7 +6,7 @@ export const streamFromDeepSearch = (opts: {
   messages: Message[];
   onFinish: Parameters<typeof streamText>[0]["onFinish"];
   langfuseTraceId: string | undefined;
-  writeMessageAnnotation: (annotation: OurMessageAnnotation) => void;
+  writeMessageAnnotation?: (annotation: OurMessageAnnotation) => void;
 }): Promise<StreamTextResult<{}, string>> => {
   return runAgentLoop(opts.messages, {
     langfuseTraceId: opts.langfuseTraceId,
@@ -19,9 +19,7 @@ export async function askDeepSearch(messages: Message[]) {
   const result = await streamFromDeepSearch({
     messages,
     onFinish: () => {}, // just a stub
-    telemetry: {
-      isEnabled: false,
-    },
+    langfuseTraceId: undefined,
   });
 
   // Consume the stream - without this,

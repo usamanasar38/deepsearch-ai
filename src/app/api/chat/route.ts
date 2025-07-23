@@ -12,6 +12,7 @@ import { threads } from "@/server/db/schema/threads";
 import { NEW_THREAD_CREATED } from "@/lib/constants";
 import { streamFromDeepSearch } from "@/server/ai/deep-search";
 import { checkRateLimit, recordRateLimit } from "@/server/lib/rate-limit";
+import { OurMessageAnnotation } from "@/server/ai/types";
 
 const langfuse = new Langfuse({
   environment: env.NODE_ENV,
@@ -136,13 +137,7 @@ export async function POST(request: Request) {
 
       const result = await streamFromDeepSearch({
         messages,
-        telemetry: {
-          isEnabled: true,
-          functionId: `chat`,
-          metadata: {
-            langfuseTraceId: trace.id,
-          },
-        },
+        langfuseTraceId: trace.id,
         onFinish: async ({ response }) => {
           // Merge the existing messages with the response messages
           const updatedMessages = appendResponseMessages({
@@ -179,6 +174,7 @@ export async function POST(request: Request) {
           });
           await langfuse.flushAsync();
         },
+        writeMessageAnnotation: (annotation: OurMessageAnnotation) => dataStream.writeMessageAnnotation(annotation),
       });
 
       result.mergeIntoDataStream(dataStream);
