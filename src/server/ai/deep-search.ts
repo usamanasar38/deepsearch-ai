@@ -1,16 +1,18 @@
 import { streamText, type StreamTextResult, type Message, type TelemetrySettings } from "ai";
 import { runAgentLoop } from "./run-agent-loop";
+import { OurMessageAnnotation } from "./types";
 
 export const streamFromDeepSearch = (opts: {
   messages: Message[];
   onFinish: Parameters<typeof streamText>[0]["onFinish"];
-  telemetry: TelemetrySettings;
+  langfuseTraceId: string | undefined;
+  writeMessageAnnotation: (annotation: OurMessageAnnotation) => void;
 }): Promise<StreamTextResult<{}, string>> => {
-  const lastMessage = opts.messages[opts.messages.length - 1];
-  if (!lastMessage) {
-    throw new Error("No messages provided");
-  }
-  return runAgentLoop(lastMessage.content);
+  return runAgentLoop(opts.messages, {
+    langfuseTraceId: opts.langfuseTraceId,
+    writeMessageAnnotation: opts.writeMessageAnnotation,
+    onFinish: opts.onFinish,
+  });
 };
 
 export async function askDeepSearch(messages: Message[]) {
