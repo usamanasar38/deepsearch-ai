@@ -6,6 +6,7 @@ import { streamText, type StreamTextResult, type Message } from "ai";
 import { model } from "@/server/ai/model";
 import { answerQuestion } from "@/server/ai/answer-question";
 import type { OurMessageAnnotation } from "./types";
+import { env } from "@/env";
 
 export async function runAgentLoop(
   messages: Message[],
@@ -38,7 +39,7 @@ export async function runAgentLoop(
         throw new Error("Query is required for search action");
       }
       const results = await searchSerper(
-        { q: nextAction.query, num: 10 },
+        { q: nextAction.query, num: env.SEARCH_RESULTS_COUNT },
         undefined,
       );
       ctx.reportQueries([
