@@ -1,9 +1,10 @@
-import { streamText, type Message, type TelemetrySettings } from "ai";
+import { streamText, type StreamTextResult, type Message, type TelemetrySettings } from "ai";
 import { model } from "./model";
 import { searchSerper } from "../lib/serper";
 import { bulkCrawlWebsites } from "../scraper";
 import { z } from "zod";
 import { env } from "@/env";
+import { runAgentLoop } from "./run-agent-loop";
 
 const systemPrompt = `You are a helpful AI assistant with access to real-time web search capabilities. The current date and time is ${new Date().toLocaleString()}. When answering questions:
 
@@ -32,62 +33,13 @@ export const streamFromDeepSearch = (opts: {
   messages: Message[];
   onFinish: Parameters<typeof streamText>[0]["onFinish"];
   telemetry: TelemetrySettings;
-}) =>
-  streamText({
-    model,
-    messages: opts.messages,
-    system: systemPrompt,
-    maxSteps: 10,
-    tools: {
-      searchWeb: {
-        parameters: z.object({
-          query: z.string().describe("The query to search the web for"),
-        }),
-        execute: async ({ query }, { abortSignal }) => {
-          const results = await searchSerper(
-            { q: query, num: env.SEARCH_RESULTS_COUNT },
-            abortSignal,
-          );
-
-          return results.organic.map((result) => ({
-            title: result.title,
-            link: result.link,
-            snippet: result.snippet,
-            date: result.date,
-          }));
-        },
-      },
-      scrapePages: {
-        parameters: z.object({
-          urls: z.array(z.string()).describe("The URLs to scrape"),
-        }),
-        execute: async ({ urls }, { abortSignal: _abortSignal }) => {
-          const results = await bulkCrawlWebsites({ urls });
-
-          if (!results.success) {
-            return {
-              error: results.error,
-              results: results.results.map(({ url, result }) => ({
-                url,
-                success: result.success,
-                data: result.success ? result.data : result.error,
-              })),
-            };
-          }
-
-          return {
-            results: results.results.map(({ url, result }) => ({
-              url,
-              success: result.success,
-              data: result.data,
-            })),
-          };
-        },
-      },
-    },
-    onFinish: opts.onFinish,
-    experimental_telemetry: opts.telemetry,
-  });
+}): Promise<StreamTextResult<{}, string>> => {
+  const lastMessage = opts.messages[opts.messages.length - 1];
+  if (!lastMessage) {
+    throw new Error("No messages provided");
+  }
+  return runAgentLoop(lastMessage.content);
+};
 
 export async function askDeepSearch(messages: Message[]) {
   const result = streamFromDeepSearch({

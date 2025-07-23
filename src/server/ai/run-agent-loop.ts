@@ -3,7 +3,6 @@ import { getNextAction } from "./get-next-action";
 import { searchSerper } from "../lib/serper";
 import { bulkCrawlWebsites } from "@/server/scraper";
 import { streamText, type StreamTextResult, type Message } from "ai";
-import { model } from "@/server/ai/model";
 import { answerQuestion } from "@/server/ai/answer-question";
 import type { OurMessageAnnotation } from "./types";
 import { env } from "@/env";
