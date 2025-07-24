@@ -89,7 +89,7 @@ const Chat = ({ threadId, initialMessages, isNewThread }: ChatProps) => {
                   ? session.user.name
                   : "AI"
               }
-              annotations={message.annotations as OurMessageAnnotation[]}
+              annotations={(message.annotations ?? []) as OurMessageAnnotation[]}
               parts={message.parts}
               isStreaming={status === "streaming" && message === lastMessage}
             />
