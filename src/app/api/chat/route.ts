@@ -1,6 +1,6 @@
 import type { Message } from "ai";
 import { env } from "@/env";
-import { createDataStreamResponse, appendResponseMessages, } from "ai";
+import { createDataStreamResponse, appendResponseMessages } from "ai";
 import { Langfuse } from "langfuse";
 import z from "zod";
 import { auth } from "@/server/auth";
@@ -24,13 +24,12 @@ const ChatSchema = z.object({
   messages: z.array(z.unknown()).min(1),
 });
 
-
 // Rate limit configuration
 const rateLimitConfig = {
-	maxRequests: 20,
-	maxRetries: 3,
-	windowMs: 60_000, // 20 seconds
-	keyPrefix: "chat",
+  maxRequests: 20,
+  maxRetries: 3,
+  windowMs: 60_000, // 20 seconds
+  keyPrefix: "chat",
 };
 
 export async function POST(request: Request) {
@@ -125,6 +124,8 @@ export async function POST(request: Request) {
     sessionId: threadId,
   });
 
+  const annotations: OurMessageAnnotation[] = [];
+
   return createDataStreamResponse({
     execute: async (dataStream) => {
       // If this is a new thread, send the thread ID to the frontend
@@ -149,6 +150,8 @@ export async function POST(request: Request) {
           if (!lastMessage) {
             return;
           }
+          // Add the annotations to the last message
+          lastMessage.annotations = annotations;
 
           const saveChatSpan = trace.span({
             name: "save-chat-history",
@@ -174,7 +177,12 @@ export async function POST(request: Request) {
           });
           await langfuse.flushAsync();
         },
-        writeMessageAnnotation: (annotation: OurMessageAnnotation) => dataStream.writeMessageAnnotation(annotation),
+        writeMessageAnnotation: (annotation: OurMessageAnnotation) => {
+          // Save the annotation in-memory
+          annotations.push(annotation);
+          // Send it to the client
+          dataStream.writeMessageAnnotation(annotation);
+        },
       });
 
       result.mergeIntoDataStream(dataStream);

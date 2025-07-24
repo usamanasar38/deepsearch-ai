@@ -39,6 +39,7 @@ export const upsertThread = async (opts: {
       threadId: threadId,
       role: message.role,
       parts: message.parts,
+      annotations: message.annotations,
       order: index,
     })),
   );
@@ -68,6 +69,7 @@ export const getThread = async (opts: { userId: string; threadId: string }) => {
       id: message.id,
       role: message.role,
       content: message.parts,
+      annotations: message.annotations,
     })),
   };
 };
