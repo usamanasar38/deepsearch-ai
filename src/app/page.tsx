@@ -10,6 +10,7 @@ import { getQueryClient } from "@/trpc/query-client";
 import { getThread } from "@/server/db/queries";
 import { Message, UIMessage } from "ai";
 import { api } from "@/trpc/server";
+import { OurMessageAnnotation } from "@/server/ai/types";
 
 export default async function Home({
   searchParams,
@@ -42,6 +43,7 @@ export default async function Home({
       id: msg.id,
       role: msg.role as Message["role"],
       parts: msg.content as Message["parts"],
+      annotations: (msg.annotations ?? []) as OurMessageAnnotation[],
       content: "",
     })) ?? []) as UIMessage[];
 

@@ -151,7 +151,7 @@ export async function POST(request: Request) {
             return;
           }
           // Add the annotations to the last message
-          lastMessage.annotations = annotations;
+          updatedMessages[updatedMessages.length - 1].annotations = annotations;
 
           const saveChatSpan = trace.span({
             name: "save-chat-history",
