@@ -21,6 +21,7 @@ import { memo, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ExternalLinkIcon, GlobeIcon } from "lucide-react";
 import { getFaviconUrl, getOpenGraphImage } from "@/lib/get-url-meta";
+import { OurMessageAnnotation } from "@/server/ai/types";
 
 type MessagePart = NonNullable<Message["parts"]>[number];
 
@@ -30,6 +31,7 @@ interface ChatMessageProps {
   userName: string;
   isStreaming: boolean;
   id: string;
+  annotations: OurMessageAnnotation[];
 }
 
 const FaviconWithLoader = memo(({ url }: { url: string }) => {

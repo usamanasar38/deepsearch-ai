@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { isNewChatCreated } from "@/utils";
 import { UIMessage } from "ai";
 import { api } from "@/trpc/react";
+import { OurMessageAnnotation } from "@/server/ai/types";
 
 interface ChatProps {
   isNewThread: boolean;
@@ -88,6 +89,7 @@ const Chat = ({ threadId, initialMessages, isNewThread }: ChatProps) => {
                   ? session.user.name
                   : "AI"
               }
+              annotations={message.annotations as OurMessageAnnotation[]}
               parts={message.parts}
               isStreaming={status === "streaming" && message === lastMessage}
             />
