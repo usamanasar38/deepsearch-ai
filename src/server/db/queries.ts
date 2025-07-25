@@ -6,7 +6,7 @@ import { eq, and } from "drizzle-orm";
 export const upsertThread = async (opts: {
   userId: string;
   threadId: string;
-  title: string;
+  title?: string;
   messages: Message[];
 }) => {
   const { userId, threadId: threadId, title, messages: newMessages } = opts;
@@ -28,7 +28,7 @@ export const upsertThread = async (opts: {
     await db.insert(threads).values({
       id: threadId,
       userId,
-      title,
+      title: title ?? "Untitled Thread",
     });
   }
 
@@ -43,6 +43,11 @@ export const upsertThread = async (opts: {
       order: index,
     })),
   );
+
+  if (title) {
+    // Update thread title if provided
+    await db.update(threads).set({ title }).where(eq(threads.id, threadId));
+  }
 
   return { id: threadId };
 };
