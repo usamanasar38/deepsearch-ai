@@ -6,6 +6,7 @@ import { streamText, type StreamTextResult, type Message } from "ai";
 import { answerQuestion } from "@/server/ai/answer-question";
 import type { OurMessageAnnotation } from "./types";
 import { env } from "@/env";
+import { summarizeURL } from "./summarize-url";
 
 export async function runAgentLoop(
   messages: Message[],
@@ -45,27 +46,44 @@ export async function runAgentLoop(
       const searchResultUrls = searchResults.organic.map((r) => r.link);
 
       const crawlResults = await bulkCrawlWebsites({ urls: searchResultUrls });
-      const combinedResults = searchResults.organic.map((result) => {
-        const crawlData = crawlResults.success
-          ? crawlResults.results.find((cr) => cr.url === result.link)
-          : undefined;
+      const summaries = await Promise.all(
+        searchResults.organic.map(async (result) => {
+          const crawlData = crawlResults.success
+            ? crawlResults.results.find((cr) => cr.url === result.link)
+            : undefined;
 
-        const scrapedContent = crawlData?.result.success
-          ? crawlData.result.data
-          : "Failed to scrape.";
+          const scrapedContent = crawlData?.result.success
+            ? crawlData.result.data
+            : "Failed to scrape.";
 
-        return {
-          date: result.date || new Date().toISOString(),
-          title: result.title,
-          url: result.link,
-          snippet: result.snippet,
-          scrapedContent,
-        };
-      });
+          const summary = await summarizeURL({
+            conversation: ctx.getMessageHistory(),
+            scrapedContent,
+            searchMetadata: {
+              date: result.date || new Date().toISOString(),
+              title: result.title,
+              url: result.link,
+            },
+            query: nextAction.query!, // query is guaranteed to exist
+            langfuseTraceId: opts.langfuseTraceId,
+          });
+
+          return {
+            ...result,
+            summary,
+          };
+        }),
+      );
 
       ctx.reportSearch({
         query: nextAction.query,
-        results: combinedResults,
+        results: summaries.map((summaryResult) => ({
+          date: summaryResult.date || new Date().toISOString(),
+          title: summaryResult.title,
+          url: summaryResult.link,
+          snippet: summaryResult.snippet,
+          summary: summaryResult.summary,
+        })),
       });
     } else if (nextAction.type === "answer") {
       return answerQuestion(ctx, { isFinal: false, ...opts });
