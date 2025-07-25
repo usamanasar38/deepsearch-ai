@@ -13,6 +13,7 @@ import { NEW_THREAD_CREATED } from "@/lib/constants";
 import { streamFromDeepSearch } from "@/server/ai/deep-search";
 import { checkRateLimit, recordRateLimit } from "@/server/lib/rate-limit";
 import { OurMessageAnnotation } from "@/server/ai/types";
+import { generateThreadTitle } from "@/server/ai/generate-title";
 
 const langfuse = new Langfuse({
   environment: env.NODE_ENV,
@@ -75,6 +76,8 @@ export async function POST(request: Request) {
     messages: Message[];
   };
 
+  let titlePromise: Promise<string> | undefined;
+
   // If no threadId is provided, create a new thread with the user's message
   if (isNewThread) {
     const createChatSpan = trace.span({
@@ -88,9 +91,10 @@ export async function POST(request: Request) {
     await upsertThread({
       userId: session.user.id,
       threadId,
-      title: messages[messages.length - 1]!.content.slice(0, 50) + "...",
+      title: 'Generating...',
       messages: messages, // Only save the user's message initially
     });
+    titlePromise = generateThreadTitle(messages);
     createChatSpan.end({
       output: {
         threadId,
@@ -118,6 +122,7 @@ export async function POST(request: Request) {
     if (!thread || thread.userId !== session.user.id) {
       return new Response("Thread not found or unauthorized", { status: 404 });
     }
+    titlePromise = Promise.resolve('');
   }
 
   trace.update({
@@ -153,6 +158,9 @@ export async function POST(request: Request) {
           // Add the annotations to the last message
           updatedMessages[updatedMessages.length - 1].annotations = annotations;
 
+          // Wait for the title to be generated
+          const title = await titlePromise;
+
           const saveChatSpan = trace.span({
             name: "save-chat-history",
             input: {
@@ -167,7 +175,7 @@ export async function POST(request: Request) {
           await upsertThread({
             userId: session.user.id,
             threadId: threadId,
-            title: lastMessage.content.slice(0, 50) + "...",
+            title,
             messages: updatedMessages,
           });
           saveChatSpan.end({

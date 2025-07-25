@@ -44,7 +44,7 @@ export const upsertThread = async (opts: {
     })),
   );
 
-  if (title) {
+  if (existingThread && title) {
     // Update thread title if provided
     await db.update(threads).set({ title }).where(eq(threads.id, threadId));
   }
