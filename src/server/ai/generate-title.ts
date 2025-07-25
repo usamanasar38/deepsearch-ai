@@ -1,7 +1,7 @@
 import { generateText, type Message } from "ai";
 import { model } from "./model";
 
-export const generateChatTitle = async (
+export const generateThreadTitle = async (
   messages: Message[],
 ) => {
   const { text } = await generateText({
