@@ -1,11 +1,16 @@
+import { after } from "next/server";
 import type { Message } from "ai";
 import { env } from "@/env";
-import { createDataStreamResponse, appendResponseMessages } from "ai";
+import {
+  createDataStreamResponse,
+  appendResponseMessages,
+  createDataStream,
+} from "ai";
 import { Langfuse } from "langfuse";
 import z from "zod";
 import { auth } from "@/server/auth";
 import { headers } from "next/headers";
-import { upsertThread } from "@/server/db/queries";
+import { getStreamIds, getThread, upsertThread } from "@/server/db/queries";
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
 import { threads } from "@/server/db/schema/threads";
@@ -14,6 +19,11 @@ import { streamFromDeepSearch } from "@/server/ai/deep-search";
 import { checkRateLimit, recordRateLimit } from "@/server/lib/rate-limit";
 import { OurMessageAnnotation } from "@/server/ai/types";
 import { generateThreadTitle } from "@/server/ai/generate-title";
+import {
+  createResumableStreamContext,
+  type ResumableStreamContext,
+} from "resumable-stream";
+import Redis from "ioredis";
 
 const langfuse = new Langfuse({
   environment: env.NODE_ENV,
@@ -32,6 +42,32 @@ const rateLimitConfig = {
   windowMs: 60_000, // 20 seconds
   keyPrefix: "chat",
 };
+
+export const maxDuration = 60;
+
+let globalStreamContext: ResumableStreamContext | null = null;
+
+function getStreamContext() {
+  if (!globalStreamContext) {
+    try {
+      globalStreamContext = createResumableStreamContext({
+        waitUntil: after,
+        publisher: new Redis(env.REDIS_URL),
+        subscriber: new Redis(env.REDIS_URL),
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes("REDIS_URL")) {
+        console.log(
+          " > Resumable streams are disabled due to missing REDIS_URL",
+        );
+      } else {
+        console.error(error);
+      }
+    }
+  }
+
+  return globalStreamContext;
+}
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
@@ -91,7 +127,7 @@ export async function POST(request: Request) {
     await upsertThread({
       userId: session.user.id,
       threadId,
-      title: 'Generating...',
+      title: "Generating...",
       messages: messages, // Only save the user's message initially
     });
     titlePromise = generateThreadTitle(messages);
@@ -122,7 +158,7 @@ export async function POST(request: Request) {
     if (!thread || thread.userId !== session.user.id) {
       return new Response("Thread not found or unauthorized", { status: 404 });
     }
-    titlePromise = Promise.resolve('');
+    titlePromise = Promise.resolve("");
   }
 
   trace.update({
@@ -200,4 +236,79 @@ export async function POST(request: Request) {
       return "Oops, an error occured!";
     },
   });
+}
+
+export async function GET(request: Request) {
+  const streamContext = getStreamContext();
+
+  if (!streamContext) {
+    return new Response(null, { status: 204 });
+  }
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user.id) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const threadId = searchParams.get("chatId");
+
+  if (!threadId) {
+    return new Response("id is required", { status: 400 });
+  }
+
+  const thread = await getThread({ threadId, userId: session.user.id });
+
+  if (!thread) {
+    return new Response("Chat not found", { status: 404 });
+  }
+
+  const { mostRecentStreamId, streamIds } = await getStreamIds({ threadId });
+
+  if (!streamIds.length) {
+    return new Response("No streams found", { status: 404 });
+  }
+
+  if (!mostRecentStreamId) {
+    return new Response("No recent stream found", { status: 404 });
+  }
+
+  const emptyDataStream = createDataStream({
+    execute: () => {},
+  });
+
+
+  const stream = await streamContext.resumableStream(
+    mostRecentStreamId,
+    () => emptyDataStream,
+  );
+
+  if (stream) {
+    return new Response(stream, { status: 200 });
+  }
+
+  /*
+   * For when the generation is "active" during SSR but the
+   * resumable stream has concluded after reaching this point.
+   */
+
+  const messages = thread.messages;
+  const mostRecentMessage = messages.at(-1);
+
+  if (!mostRecentMessage || mostRecentMessage.role !== "assistant") {
+    return new Response(emptyDataStream, { status: 200 });
+  }
+
+  const streamWithMessage = createDataStream({
+    execute: (buffer) => {
+      buffer.writeData({
+        type: "append-message",
+        message: JSON.stringify(mostRecentMessage),
+      });
+    },
+  });
+
+  return new Response(streamWithMessage, { status: 200 });
 }

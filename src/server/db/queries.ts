@@ -1,4 +1,5 @@
 import { db } from ".";
+import { streams } from "./schema/streams";
 import { threads, messages } from "./schema/threads";
 import type { Message } from "ai";
 import { eq, and } from "drizzle-orm";
@@ -86,4 +87,38 @@ export const getThreads = async (opts: { userId: string }) => {
     where: eq(threads.userId, userId),
     orderBy: (threads, { desc }) => [desc(threads.updatedAt)],
   });
+};
+
+export const appendStreamId = async (opts: {
+  threadId: string;
+  streamId: string;
+}): Promise<void> => {
+  const { threadId, streamId } = opts;
+
+  await db.insert(streams).values({
+    id: streamId,
+    threadId,
+  });
+};
+
+/**
+ * Get the IDs of all streams for a given chat.
+ */
+export const getStreamIds = async (opts: {
+  threadId: string;
+}): Promise<{
+  streamIds: string[];
+  mostRecentStreamId: string | undefined;
+}> => {
+  const { threadId } = opts;
+
+  const streamResult = await db.query.streams.findMany({
+    where: eq(streams.threadId, threadId),
+    orderBy: (streams, { desc }) => [desc(streams.createdAt)],
+  });
+
+  return {
+    streamIds: streamResult.map((stream) => stream.id),
+    mostRecentStreamId: streamResult[0]?.id,
+  };
 };
