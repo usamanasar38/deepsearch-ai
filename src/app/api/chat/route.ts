@@ -10,7 +10,12 @@ import { Langfuse } from "langfuse";
 import z from "zod";
 import { auth } from "@/server/auth";
 import { headers } from "next/headers";
-import { getStreamIds, getThread, upsertThread } from "@/server/db/queries";
+import {
+  appendStreamId,
+  getStreamIds,
+  getThread,
+  upsertThread,
+} from "@/server/db/queries";
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
 import { threads } from "@/server/db/schema/threads";
@@ -166,6 +171,10 @@ export async function POST(request: Request) {
   });
 
   const annotations: OurMessageAnnotation[] = [];
+  const streamId = crypto.randomUUID();
+
+  // Record this new stream so we can resume later
+  await appendStreamId({ threadId, streamId });
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
@@ -230,6 +239,10 @@ export async function POST(request: Request) {
       });
 
       result.mergeIntoDataStream(dataStream);
+
+      // Consume the stream - without this,
+      // we won't be able to resume the stream later
+      await result.consumeStream();
     },
     onError: (e) => {
       console.error(e);
@@ -278,7 +291,6 @@ export async function GET(request: Request) {
   const emptyDataStream = createDataStream({
     execute: () => {},
   });
-
 
   const stream = await streamContext.resumableStream(
     mostRecentStreamId,
