@@ -7,6 +7,7 @@ import { answerQuestion } from "@/server/ai/answer-question";
 import type { OurMessageAnnotation } from "./types";
 import { env } from "@/env";
 import { summarizeURL } from "./summarize-url";
+import { queryRewriter } from "./query-rewriter";
 
 export async function runAgentLoop(
   messages: Message[],
@@ -22,30 +23,22 @@ export async function runAgentLoop(
   // A loop that continues until we have an answer
   // or we've taken 10 actions
   while (!ctx.shouldStop()) {
-    // We choose the next action based on the state of our system
-    const nextAction = await getNextAction(ctx, opts);
+    // 1. Get the plan and queries
+    const { plan, queries } = await queryRewriter(ctx, opts);
 
-    // Send the action as an annotation if writeMessageAnnotation is provided
-    if (opts.writeMessageAnnotation) {
-      opts.writeMessageAnnotation({
-        type: "NEW_ACTION",
-        action: nextAction,
-      });
-    }
-
-    // We execute the action and update the state of our system
-    if (nextAction.type === "search") {
-      if (!nextAction.query) {
-        throw new Error("Query is required for search action");
-      }
+    // 2. Execute all queries in parallel
+    const searchResultsPromises = queries.map(async (query) => {
+      // 1. Search the web
       const searchResults = await searchSerper(
-        { q: nextAction.query, num: env.SEARCH_RESULTS_COUNT },
+        { q: query, num: env.SEARCH_RESULTS_COUNT },
         undefined,
       );
 
       const searchResultUrls = searchResults.organic.map((r) => r.link);
-
+      /// 2. Scrape the results
       const crawlResults = await bulkCrawlWebsites({ urls: searchResultUrls });
+
+      // 3. Summarize each scraped result in parallel
       const summaries = await Promise.all(
         searchResults.organic.map(async (result) => {
           const crawlData = crawlResults.success
@@ -56,6 +49,13 @@ export async function runAgentLoop(
             ? crawlData.result.data
             : "Failed to scrape.";
 
+          if (scrapedContent === "Failed to scrape.") {
+            return {
+              ...result,
+              summary: "Failed to scrape, so no summary could be generated.",
+            };
+          }
+
           const summary = await summarizeURL({
             conversation: ctx.getMessageHistory(),
             scrapedContent,
@@ -64,7 +64,7 @@ export async function runAgentLoop(
               title: result.title,
               url: result.link,
             },
-            query: nextAction.query!, // query is guaranteed to exist
+            query,
             langfuseTraceId: opts.langfuseTraceId,
           });
 
@@ -75,8 +75,9 @@ export async function runAgentLoop(
         }),
       );
 
+      // 4. Report the summaries to the system context
       ctx.reportSearch({
-        query: nextAction.query,
+        query,
         results: summaries.map((summaryResult) => ({
           date: summaryResult.date || new Date().toISOString(),
           title: summaryResult.title,
@@ -85,7 +86,23 @@ export async function runAgentLoop(
           summary: summaryResult.summary,
         })),
       });
-    } else if (nextAction.type === "answer") {
+    });
+
+    // 3. Wait for all queries to complete and save to context
+    await Promise.all(searchResultsPromises);
+
+    // 4. Decide whether to continue or answer
+    const nextAction = await getNextAction(ctx, opts);
+
+    // Send the action as an annotation if writeMessageAnnotation is provided
+    if (opts.writeMessageAnnotation) {
+      opts.writeMessageAnnotation({
+        type: "NEW_ACTION",
+        action: nextAction,
+      });
+    }
+
+    if (nextAction.type === "answer") {
       return answerQuestion(ctx, { isFinal: false, ...opts });
     }
 

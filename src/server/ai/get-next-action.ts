@@ -10,19 +10,11 @@ export const actionSchema = z.object({
       "The title of the action, to be displayed in the UI. Be extremely concise. 'Searching Saka's injury history', 'Checking HMRC industrial action', 'Comparing toaster ovens'",
     ),
   reasoning: z.string().describe("The reason you chose this step."),
-  type: z.enum(["search", "answer"]).describe(
+  type: z.enum(["continue", "answer"]).describe(
     `The type of action to take.
-      - 'search': Search the web for information, returns a list of URLs and associated snippets.
+      - 'continue': Continue searching for more information.
       - 'answer': Answer the user's question and complete the loop.`,
   ),
-  query: z
-    .string()
-    .describe("The query to search for. Only required if type is 'search'.")
-    .optional(),
-  urls: z
-    .array(z.string())
-    .describe("The URLs to scrape. Only required if type is 'scrape'.")
-    .optional(),
 });
 
 export type Action = z.infer<typeof actionSchema>;

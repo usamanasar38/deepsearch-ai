@@ -19,7 +19,12 @@ import {
 } from "../ui/kibo-ui/ai/reasoning";
 import { memo, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ExternalLinkIcon, GlobeIcon, LinkIcon, SearchIcon } from "lucide-react";
+import {
+  ExternalLinkIcon,
+  GlobeIcon,
+  LinkIcon,
+  SearchIcon,
+} from "lucide-react";
 import { getFaviconUrl, getOpenGraphImage } from "@/lib/get-url-meta";
 import { OurMessageAnnotation } from "@/server/ai/types";
 
@@ -79,7 +84,7 @@ const ReasoningSteps = ({
             <li key={index} className="relative">
               <button
                 onClick={() => setOpenStep(isOpen ? null : index)}
-                className={`min-w-34 flex w-full flex-shrink-0 items-center rounded px-2 py-1 text-left text-sm transition-colors ${
+                className={`flex w-full min-w-34 flex-shrink-0 items-center rounded px-2 py-1 text-left text-sm transition-colors ${
                   isOpen
                     ? "bg-gray-700 text-gray-200"
                     : "text-gray-400 hover:bg-gray-800 hover:text-gray-300"
@@ -99,13 +104,15 @@ const ReasoningSteps = ({
               <div className={`${isOpen ? "mt-1" : "hidden"}`}>
                 {isOpen && (
                   <div className="px-2 py-1">
-                    <div className="text-sm italic text-gray-400">
+                    <div className="text-sm text-gray-400 italic">
                       <AIResponse>{annotation.action.reasoning}</AIResponse>
                     </div>
-                    {annotation.action.type === "search" && (
-                      <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
-                        <SearchIcon className="size-4" />
-                        <span>{annotation.action.query}</span>
+                    {annotation.action.type === "continue" && (
+                      <div className="mt-2 flex flex-col gap-2 text-sm text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <SearchIcon className="size-4" />
+                          <span>Continuing search...</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -127,71 +134,73 @@ const WebSearchToolInvocation = memo(
   }) => {
     return (
       <AIToolResult
-        result={(<div className="grid grid-cols-1 gap-4">
-          {links.map((item, index) => (
-          <button
-            key={index}
-            type="button"
-            className={cn(
-              "group bg-card relative flex-shrink-0 rounded-lg border text-left",
-              "hover:border-primary/20 transition-all duration-200 hover:shadow-lg",
-              "hover:border-primary/20 hover:bg-accent/50",
-              "w-64 min-w-64 overflow-hidden",
-            )}
-            onClick={() => item.link && window.open(item.link, "_blank")}
-            aria-label={`Open ${item.title} in new tab`}
-          >
-            {item.link && (
-              <div className="bg-muted/30 relative h-32 overflow-hidden">
-                <img
-                  src={getOpenGraphImage(item.link)}
-                  alt=""
-                  className="aspect-video h-full w-full object-cover"
-                  style={{
-                    margin: "0 auto",
-                    maxHeight: "100%",
-                  }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                    const fallback =
-                      target.nextElementSibling as HTMLDivElement;
-                    if (fallback) fallback.style.display = "flex";
-                  }}
-                />
-                <div
-                  className="bg-muted/50 absolute inset-0 hidden items-center justify-center"
-                  style={{ display: "none" }}
-                >
-                  <GlobeIcon className="text-muted-foreground/50 size-8" />
+        result={
+          <div className="grid grid-cols-1 gap-4">
+            {links.map((item, index) => (
+              <button
+                key={index}
+                type="button"
+                className={cn(
+                  "group bg-card relative flex-shrink-0 rounded-lg border text-left",
+                  "hover:border-primary/20 transition-all duration-200 hover:shadow-lg",
+                  "hover:border-primary/20 hover:bg-accent/50",
+                  "w-64 min-w-64 overflow-hidden",
+                )}
+                onClick={() => item.link && window.open(item.link, "_blank")}
+                aria-label={`Open ${item.title} in new tab`}
+              >
+                {item.link && (
+                  <div className="bg-muted/30 relative h-32 overflow-hidden">
+                    <img
+                      src={getOpenGraphImage(item.link)}
+                      alt=""
+                      className="aspect-video h-full w-full object-cover"
+                      style={{
+                        margin: "0 auto",
+                        maxHeight: "100%",
+                      }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = "none";
+                        const fallback =
+                          target.nextElementSibling as HTMLDivElement;
+                        if (fallback) fallback.style.display = "flex";
+                      }}
+                    />
+                    <div
+                      className="bg-muted/50 absolute inset-0 hidden items-center justify-center"
+                      style={{ display: "none" }}
+                    >
+                      <GlobeIcon className="text-muted-foreground/50 size-8" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2 p-4">
+                  <div className="flex items-center gap-2">
+                    {item.link && <FaviconWithLoader url={item.link} />}
+
+                    <h1 className="leading text-foreground m-0 mb-0 truncate text-base font-semibold">
+                      {item.title}
+                    </h1>
+                  </div>
+                  <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
+                    {item.snippet}
+                  </p>
+
+                  {item.link && (
+                    <div className="border-border/50 flex items-center gap-1.5 border-t pt-2">
+                      <span className="text-muted-foreground/70 flex-1 truncate text-xs">
+                        {item.link.replace(/^(https?:\/\/)/, "").split("/")[0]}
+                      </span>
+                      <ExternalLinkIcon className="text-muted-foreground/50 size-3 flex-shrink-0" />
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-
-            <div className="space-y-2 p-4">
-              <div className="flex items-center gap-2">
-                {item.link && <FaviconWithLoader url={item.link} />}
-
-                <h1 className="leading text-foreground m-0 mb-0 truncate text-base font-semibold">
-                  {item.title}
-                </h1>
-              </div>
-              <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
-                {item.snippet}
-              </p>
-
-              {item.link && (
-                <div className="border-border/50 flex items-center gap-1.5 border-t pt-2">
-                  <span className="text-muted-foreground/70 flex-1 truncate text-xs">
-                    {item.link.replace(/^(https?:\/\/)/, "").split("/")[0]}
-                  </span>
-                  <ExternalLinkIcon className="text-muted-foreground/50 size-3 flex-shrink-0" />
-                </div>
-              )}
-            </div>
-          </button>
-        ))}
-        </div>)}
+              </button>
+            ))}
+          </div>
+        }
       />
     );
   },
@@ -219,7 +228,7 @@ const ToolInvocation = memo(
         <AIToolHeader name={toolName} status={status} />
         <AIToolContent>
           <AIToolParameters parameters={toolInvocation.args} />
-          {state === "result" && toolName === 'searchWeb' && (
+          {state === "result" && toolName === "searchWeb" && (
             <WebSearchToolInvocation links={toolInvocation.result} />
           )}
         </AIToolContent>
@@ -229,11 +238,18 @@ const ToolInvocation = memo(
 );
 
 export const ChatMessage = memo(
-  ({ id, role, userName, parts, isStreaming, annotations }: ChatMessageProps) => {
+  ({
+    id,
+    role,
+    userName,
+    parts,
+    isStreaming,
+    annotations,
+  }: ChatMessageProps) => {
     return (
       <AIMessage from={role === "user" ? "user" : "assistant"}>
         <AIMessageContent className="w-full">
-          {role !== 'user' && <ReasoningSteps annotations={annotations} />}
+          {role !== "user" && <ReasoningSteps annotations={annotations} />}
           {parts.map((part, index) => {
             if (part.type === "text") {
               return (
