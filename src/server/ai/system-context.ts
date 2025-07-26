@@ -43,7 +43,7 @@ export class SystemContext {
   }
 
   shouldStop() {
-    return this.step >= 10;
+    return this.step >= 5;
   }
 
   incrementStep() {
