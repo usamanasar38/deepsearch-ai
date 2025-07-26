@@ -23,6 +23,7 @@ import { isNewChatCreated } from "@/utils";
 import { UIMessage } from "ai";
 import { api } from "@/trpc/react";
 import { OurMessageAnnotation } from "@/server/ai/types";
+import { useAutoResume } from "@/hooks/use-auto-resume";
 
 interface ChatProps {
   isNewThread: boolean;
@@ -34,12 +35,21 @@ const Chat = ({ threadId, initialMessages, isNewThread }: ChatProps) => {
   const router = useRouter();
   const utils = api.useUtils();
   const { data: session, isPending } = useSession();
-  const { messages, input, status, data, handleInputChange, handleSubmit } = useChat({
+  const { messages, input, status, data, handleInputChange, handleSubmit, setMessages, experimental_resume } = useChat({
+    id: threadId,
     body: {
       threadId,
       isNewThread
     },
     initialMessages,
+  });
+
+  useAutoResume({
+    autoResume: true,
+    initialMessages,
+    experimental_resume,
+    data,
+    setMessages,
   });
 
   useEffect(() => {
