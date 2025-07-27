@@ -113,6 +113,12 @@ const ReasoningSteps = ({
                           <SearchIcon className="size-4" />
                           <span>Continuing search...</span>
                         </div>
+                        <div className="mt-2 border-l-2 border-gray-700 pl-4">
+                          <div className="font-medium text-gray-300">
+                            Feedback:
+                          </div>
+                          <AIResponse>{annotation.action.feedback!}</AIResponse>
+                        </div>
                       </div>
                     )}
                   </div>

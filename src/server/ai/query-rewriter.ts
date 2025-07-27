@@ -52,6 +52,8 @@ Based on this context, create a research plan and generate search queries that w
 Here is the search history:
 
 ${context.getSearchHistory()}
+
+${context.getLastFeedback() ? `\nLast feedback from evaluation:\n${context.getLastFeedback()}` : ""}
 `,
     experimental_telemetry: opts.langfuseTraceId
       ? {

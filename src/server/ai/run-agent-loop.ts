@@ -94,6 +94,11 @@ export async function runAgentLoop(
     // 4. Decide whether to continue or answer
     const nextAction = await getNextAction(ctx, opts);
 
+    // Store the feedback in the system context only if it exists
+    if (nextAction.feedback) {
+      ctx.setLastFeedback(nextAction.feedback);
+    }
+
     // Send the action as an annotation if writeMessageAnnotation is provided
     if (opts.writeMessageAnnotation) {
       opts.writeMessageAnnotation({
