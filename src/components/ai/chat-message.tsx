@@ -26,7 +26,7 @@ import {
   SearchIcon,
 } from "lucide-react";
 import { getFaviconUrl, getOpenGraphImage } from "@/lib/get-url-meta";
-import { OurMessageAnnotation } from "@/server/ai/types";
+import { OurMessageAnnotation, Source } from "@/server/ai/types";
 
 type MessagePart = NonNullable<Message["parts"]>[number];
 
@@ -66,6 +66,36 @@ const FaviconWithLoader = memo(({ url }: { url: string }) => {
   );
 });
 
+const Sources = ({ sources }: { sources: Source[] }) => {
+  return (
+    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {sources.map((source, index) => (
+        <a
+          key={index}
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-start gap-2 rounded border border-gray-700 bg-gray-800 p-3 hover:bg-gray-700"
+        >
+          {source.favicon && (
+            <img
+              src={source.favicon}
+              alt=""
+              className="mt-0.5 h-4 w-4 flex-shrink-0"
+            />
+          )}
+          <div className="flex-1">
+            <div className="text-sm font-medium text-gray-200">
+              {source.title}
+            </div>
+            <div className="mt-1 text-xs text-gray-400">{source.snippet}</div>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+};
+
 const ReasoningSteps = ({
   annotations,
 }: {
@@ -99,28 +129,44 @@ const ReasoningSteps = ({
                 >
                   {index + 1}
                 </span>
-                {annotation.action.title}
+                {annotation.type === "NEW_ACTION"
+                  ? annotation.action.title
+                  : "Sources"}
               </button>
               <div className={`${isOpen ? "mt-1" : "hidden"}`}>
                 {isOpen && (
                   <div className="px-2 py-1">
-                    <div className="text-sm text-gray-400 italic">
-                      <AIResponse>{annotation.action.reasoning}</AIResponse>
-                    </div>
-                    {annotation.action.type === "continue" && (
-                      <div className="mt-2 flex flex-col gap-2 text-sm text-gray-400">
-                        <div className="flex items-center gap-2">
-                          <SearchIcon className="size-4" />
-                          <span>Continuing search...</span>
+                    {annotation.type === "NEW_ACTION" ? (
+                      <>
+                        <div className="text-sm text-gray-400 italic">
+                          <AIResponse>{annotation.action.reasoning}</AIResponse>
                         </div>
-                        <div className="mt-2 border-l-2 border-gray-700 pl-4">
-                          <div className="font-medium text-gray-300">
-                            Feedback:
+                        {annotation.action.type === "continue" && (
+                          <div className="mt-2 flex flex-col gap-2 text-sm text-gray-400">
+                            <div className="flex items-center gap-2">
+                              <SearchIcon className="size-4" />
+                              <span>Continuing search...</span>
+                            </div>
+                            <div className="mt-2 border-l-2 border-gray-700 pl-4">
+                              <div className="font-medium text-gray-300">
+                                Feedback:
+                              </div>
+                              <AIResponse>
+                                {annotation.action.feedback!}
+                              </AIResponse>
+                            </div>
                           </div>
-                          <AIResponse>{annotation.action.feedback!}</AIResponse>
-                        </div>
-                      </div>
-                    )}
+                        )}
+                      </>
+                    ) : annotation.type === "SOURCES" ? (
+                      <Sources
+                        sources={
+                          annotation.type === "SOURCES"
+                            ? annotation.sources
+                            : []
+                        }
+                      />
+                    ) : null}
                   </div>
                 )}
               </div>
