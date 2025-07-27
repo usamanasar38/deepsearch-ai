@@ -2,7 +2,6 @@ import { after } from "next/server";
 import type { Message } from "ai";
 import { env } from "@/env";
 import {
-  createDataStreamResponse,
   appendResponseMessages,
   createDataStream,
 } from "ai";
@@ -176,7 +175,7 @@ export async function POST(request: Request) {
   // Record this new stream so we can resume later
   await appendStreamId({ threadId, streamId });
 
-  return createDataStreamResponse({
+  const stream = createDataStream({
     execute: async (dataStream) => {
       // If this is a new thread, send the thread ID to the frontend
       if (isNewThread) {
@@ -242,13 +241,22 @@ export async function POST(request: Request) {
 
       // Consume the stream - without this,
       // we won't be able to resume the stream later
-      await result.consumeStream();
+      void result.consumeStream();
     },
     onError: (e) => {
       console.error(e);
       return "Oops, an error occured!";
     },
   });
+
+  const streamContext = getStreamContext();
+
+  if (streamContext) {
+    return new Response(
+      await streamContext.resumableStream(streamId, () => stream),
+    );
+  }
+  return new Response(stream);
 }
 
 export async function GET(request: Request) {
